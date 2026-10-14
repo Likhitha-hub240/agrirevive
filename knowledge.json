@@ -1,0 +1,745 @@
+{
+  "metadata": {
+    "title": "Volcanic Soils Emergency Knowledge Base - Degraded Andosol / High-Acid Pumice Basin",
+    "knowledge_base_id": "KB-VOLC-ANDOSOL-EMERG",
+    "version": "2.0.0",
+    "created": "2026-10-14",
+    "author": "Agricultural Engineering Practice Unit - Volcanic Soils (Andosols)",
+    "scope": "Diagnostics and remediation (precision liming, biochar, phosphorus liberation, slope erosion control), sub-25-day emergency protein, high-yield starch root crop strategy, ranked top-5 crops, and a beginner cultivation roadmap for a degraded high-acid volcanic ash / pumice basin.",
+    "units": {
+      "ph": "pH units (1:2.5 soil:water suspension; buffer pH measured in parallel for lime requirement)",
+      "ec": "dS/m (saturated-paste extract ECe unless flagged)",
+      "amendment_rate": "t/ha or kg/ha as stated; liming expressed as t/ha CaCO3 equivalent (CaCO3e)",
+      "slope": "percent grade",
+      "time": "days relative to Day 0 (= main starch crop planting day); negative values are pre-plant"
+    },
+    "condition_codes": ["ACID_LOW_BASE", "P_FIXATION_ALLOPHANE", "EROSION_SEVERE", "MARGINALLY_ACIDIC", "HEALTHY", "OUT_OF_SCOPE_SALINITY", "UNDIAGNOSED"],
+    "base_condition_codes": ["ACID_LOW_BASE", "MARGINALLY_ACIDIC", "HEALTHY", "OUT_OF_SCOPE_SALINITY", "UNDIAGNOSED"],
+    "modifier_codes": ["P_FIXATION_ALLOPHANE", "EROSION_SEVERE"],
+    "parse_guide": "Chain: scenario_input -> soil_parameters.ph / soil_parameters.ec_ds_m / soil_parameters.slope_and_erosion / soil_parameters.phosphorus_status range match -> diagnostic_rules sorted by ascending priority (first rule with modifier=false whose when-clause matches = base_condition; every matched rule with modifier=true appends its then-value as a modifier code) -> soil_conditions[base_condition] plus soil_conditions[each modifier] -> treatment_protocols[each matched code] combined with remediation_treatment (precision module for this scenario) -> crop_recommendations[base+modifiers joined by '+'] -> cultivation_roadmaps[where target_condition contains the matched codes]. Fields named *_ref are dotted-path pointers to other keys. All rate objects use {min,max,unit} for programmatic consumption.",
+    "safety_guards": [
+      { "id": "G-01", "if": "ec_ds_m >= 0.75", "then": "HALT this protocol; salinity reclamation (leaching + drainage) must precede liming - refer to a salinity knowledge base", "severity": "critical" },
+      { "id": "G-02", "if": "buffer_ph is not measured", "then": "Do NOT compute lime from water pH alone; on high-organic, high-P-fixing ash soils water pH mis-estimates lime requirement by 30-50%", "severity": "high" },
+      { "id": "G-03", "if": "ph >= 5.5 AND exchangeable_Al < 0.5 cmol(c)/kg", "then": "Skip corrective liming; apply maintenance lime only (0.5-1.0 t/ha CaCO3e per year)", "severity": "medium" },
+      { "id": "G-04", "if": "slope > 25% OR rills are actively extending during rainfall", "then": "Install structural erosion control (vetiver contour hedgerows + jute/coir netting + mulch) BEFORE any tillage, incorporation or traffic", "severity": "critical" },
+      { "id": "G-05", "if": "cassava (Manihot esculenta) product is destined for human consumption", "then": "Never eat raw: peel, chip, soak or ferment 24-48 h, then boil or sun-dry (cyanogenic glycosides); sweet/low-cyanide clones preferred in emergencies", "severity": "critical" }
+    ],
+    "standards_referenced": [
+      "FAO - World Reference Base for Soil Resources (WRB): Andosols, volcanic ash materials",
+      "USDA - Soil Survey Manual / Soil Taxonomy (Andisols; pH class boundaries; exchanger acidity)",
+      "Kamprath - buffer pH (lime requirement) methodology for acid soils",
+      "IFDC / IPNI - Reactive Phosphate Rock direct application guidance (fineness, soil pH, placement)",
+      "IBI - International Biochar Initiative standards (H:C ratio, pH, liming value, contaminant limits)",
+      "Vetiver Network / FAO - vetiver grass technology for contour hedgerows and gully control",
+      "USDA NRCS - Field Book for Describing and Sampling Soils (erosion classes, slope classes)",
+      "ICAR / IIPR - acid soil crop and nutrient recommendation guidelines (Ca, Mg, Mo, banded P)",
+      "Mycorrhizal Applications / IBI - arbuscular mycorrhizal inoculant quality and placement guidelines"
+    ],
+    "disclaimer": "All rates are decision-support defaults for an assumed non-saline (ECe < 0.75 dS/m) degraded volcanic ash basin. Field application must be preceded by a current laboratory soil test (pH, buffer pH, exchangeable Al/Ca/Mg/K, Olsen or Truog P, organic C, and ideally oxalate-extractable Al+Fe for degree of P saturation). Lime and biochar rates must be finalised from buffer-pH and exchangeable-base data, never from water pH alone."
+  },
+
+  "scenario_input": {
+    "scenario_id": "SCEN-VOLC-ACID-001",
+    "soil_profile": "Degraded Volcanic Ash / High-Acid Pumice Basin",
+    "classification": {
+      "wrb": "Andosol (degraded, cutanic/isolunic, pumiceic or vitric)",
+      "usda": "Andisol",
+      "parent_material": "Weathered pumice, ash and tephra layers"
+    },
+    "measured": {
+      "ph": 4.6,
+      "ph_class_code": "STRONGLY_ACIDIC",
+      "ph_label": "Severely acidic",
+      "buffer_ph": null,
+      "ec_ds_m": null,
+      "ec_assumed": "non-saline (<0.75 dS/m) - degraded, strongly leached basin",
+      "exchangeable_al_cmol_kg": null,
+      "olsen_p_mg_kg": null,
+      "slope_pct": null,
+      "ground_cover_pct": null
+    },
+    "flags": ["allophane_present", "available_P_low", "phosphorus_fixation_high", "slope_pct_gt_5", "vegetation_cover_lt_30", "erosion_class_ge_V_or_rills", "exchangeable_Al_high", "organic_carbon_low"],
+    "constraints": {
+      "emergency_protein_days_max": 25,
+      "starch_crop_role": "high-yield, long-term survival, acid-tolerant",
+      "operator_skill": "beginner",
+      "erosion_status": "severe slope erosion risk"
+    }
+  },
+
+  "soil_parameters": {
+    "ph": {
+      "measurement": "pH in 1:2.5 soil:water suspension; record buffer pH (SMP/Kehres/York) separately for lime-rate calculation",
+      "ranges": [
+        { "code": "VERY_STRONGLY_ACIDIC", "label": "Very Strongly Acidic", "min": 0.0, "max": 4.5, "lime_required": true, "risk": "Severe Al3+/Mn2+ toxicity, base-cation leaching, extreme P fixation, Mo deficiency", "note": "class interval is [min,max)" },
+        { "code": "STRONGLY_ACIDIC", "label": "Strongly Acidic", "min": 4.5, "max": 5.0, "lime_required": true, "risk": "Exchangeable Al dominates the exchange complex; Ca/Mg/K depleted; P fixed by Al and allophane - SCENARIO MATCH at pH 4.6" },
+        { "code": "MODERATELY_ACIDIC", "label": "Moderately Acidic", "min": 5.0, "max": 5.5, "lime_required": true, "risk": "Al toxicity declining but still present; P fixation, Mn toxicity risk, reduced nitrification" },
+        { "code": "SLIGHTLY_ACIDIC", "label": "Slightly Acidic", "min": 5.5, "max": 6.0, "lime_required": "optional", "risk": "Marginal - TARGET BAND for acid volcanic soils (5.5-6.0): Al neutralised, P availability and reactive rock phosphate dissolution both near optimum" },
+        { "code": "MARGINALLY_ACIDIC", "label": "Mildly Acidic", "min": 6.0, "max": 6.5, "lime_required": false, "risk": "Low; maintain organic matter and Mg supply" },
+        { "code": "NEUTRAL", "label": "Neutral", "min": 6.5, "max": 7.3, "lime_required": false, "risk": "None agronomic; optimum nutrient availability", "note": "Do NOT over-lime volcanic ash beyond 6.5: micronutrient availability falls and allophane anion sorption rises" },
+        { "code": "SLIGHTLY_ALKALINE", "label": "Slightly Alkaline", "min": 7.3, "max": 7.8, "lime_required": false, "risk": "Fe/Zn/Mn availability declining" },
+        { "code": "MODERATELY_ALKALINE", "label": "Moderately Alkaline", "min": 7.8, "max": 8.4, "lime_required": false, "risk": "P precipitated as Ca-phosphate; micronutrient chlorosis" },
+        { "code": "STRONGLY_ALKALINE", "label": "Strongly Alkaline", "min": 8.4, "max": 9.0, "lime_required": false, "risk": "Sodicity likely - request ESP/SAR" },
+        { "code": "VERY_STRONGLY_ALKALINE", "label": "Very Strongly Alkaline", "min": 9.0, "max": 14.0, "lime_required": false, "risk": "Severe sodicity / dispersion" }
+      ]
+    },
+    "ec_ds_m": {
+      "measurement": "ECe = saturated-paste extract. Soil:water 1:5 suspensions are not interchangeable with ECe.",
+      "ranges": [
+        { "code": "NON_SALINE", "label": "Non Saline", "min": 0.0, "max": 0.75, "action": "Proceed with acid-soil remediation", "note": "SCENARIO ASSUMPTION" },
+        { "code": "SALINE", "label": "Saline", "min": 0.75, "max": 4.0, "action": "Trigger safety guard G-01 - leach salts before liming" },
+        { "code": "SALINE_HIGH", "label": "Strongly to Very Strongly Saline", "min": 4.0, "max": 40.0, "action": "Trigger safety guard G-01 - reclamation required" }
+      ]
+    },
+    "slope_and_erosion": {
+      "measurement": "Combination of slope grade, vegetative ground cover and USDA erosion class",
+      "ranges": [
+        { "code": "EROSION_LOW", "label": "Low", "slope_pct": { "min": 0, "max": 5 }, "cover_pct": { "min": 70, "max": 100 }, "usda_class": "Class I-II (slight)", "action": "Maintain cover; contour farming only" },
+        { "code": "EROSION_MODERATE", "label": "Moderate", "slope_pct": { "min": 5, "max": 15 }, "cover_pct": { "min": 30, "max": 70 }, "usda_class": "Class III-IV (moderate, sheet + some rills)", "action": "Contour hedgerows + cover crop + residue retention" },
+        { "code": "EROSION_SEVERE", "label": "Severe", "slope_pct": { "min": 5, "max": 100 }, "cover_pct": { "min": 0, "max": 30 }, "usda_class": "Class V-VI (severe, active rills/gullies)", "action": "Emergency structural + organic stabilisation before any planting - SCENARIO MATCH" }
+      ],
+      "note": "Severity is driven as much by cover deficit as by gradient: slope >5% with cover <30% and active rills = EROSION_SEVERE regardless of absolute slope."
+    },
+    "phosphorus_status": {
+      "measurement": "Olsen or Truog P (preferred for acid volcanic soils; Bray under-reports on high-sorbing media). Degree of P saturation (DPS) by ammonium oxalate = (Al_ox + Fe_ox based) for andisols.",
+      "ranges": [
+        { "code": "P_VERY_LOW", "label": "P-deficient / strongly fixing", "olsen_p_mg_kg": { "min": 0, "max": 10 }, "dps_pct": { "min": 0, "max": 15 }, "action": "Band soluble starter P + reactive rock phosphate + AMF" },
+        { "code": "P_LOW", "label": "P-low", "olsen_p_mg_kg": { "min": 10, "max": 15 }, "dps_pct": { "min": 15, "max": 20 }, "action": "Banded P at every planting; sidedress at 45-60 days" },
+        { "code": "P_ADEQUATE", "label": "P-adequate (andisol target)", "olsen_p_mg_kg": { "min": 15, "max": 30 }, "dps_pct": { "min": 15, "max": 25 }, "action": "Maintain with band P and organic matter - SCENARIO TARGET", "note": "Andisols are safely held at DPS 15-25%, higher than the 10-15% used for crystalline soils, because allophane binds P without toxicity risk" },
+        { "code": "P_HIGH", "label": "P-high", "olsen_p_mg_kg": { "min": 30, "max": 100 }, "dps_pct": { "min": 25, "max": 100 }, "action": "Suspend P applications; test runoff risk" }
+      ]
+    }
+  },
+
+  "diagnostic_rules": [
+    { "id": "D-01", "priority": 1, "description": "Very strongly acid, non-saline", "when": { "ph": [0.0, 4.5], "ec": [0.0, 0.75] }, "then": "ACID_LOW_BASE", "modifier": false, "severity": "critical", "evidence": "pH <4.5: exchangeable Al dominant, base saturation <35%, Ca/Mg leached from ash" },
+    { "id": "D-02", "priority": 2, "description": "Strongly acid, non-saline - scenario base condition", "when": { "ph": [4.5, 5.0], "ec": [0.0, 0.75] }, "then": "ACID_LOW_BASE", "modifier": false, "severity": "high", "evidence": "pH 4.5-5.0: Al toxicity well advanced, Mn risk, Ca/Mg/K depletion, P fixation - liming indicated (pH 4.6 = MATCH)" },
+    { "id": "D-03", "priority": 3, "description": "Moderately acid, non-saline", "when": { "ph": [5.0, 5.5], "ec": [0.0, 0.75] }, "then": "ACID_LOW_BASE", "modifier": false, "severity": "medium", "evidence": "Al present but declining; P fixation persists - corrective or maintenance liming by buffer pH" },
+    { "id": "D-04", "priority": 4, "description": "Acidic AND saline", "when": { "ph": [0.0, 5.5], "ec": [0.75, 40.0] }, "then": "OUT_OF_SCOPE_SALINITY", "modifier": false, "severity": "critical", "evidence": "Salts must be leached before lime reacts correctly - safety guard G-01" },
+    { "id": "D-05", "priority": 5, "description": "Non-saline but high-P-fixing short-range-order mineral present", "when": { "ph": [0.0, 5.5], "ec": [0.0, 0.75], "flags": ["allophane_present", "phosphorus_fixation_high", "available_P_low"] }, "then": "P_FIXATION_ALLOPHANE", "modifier": true, "severity": "high", "evidence": "Allophane/imogolite and amorphous Fe/Al oxides sorb phosphate by ligand exchange; broadcast P is locked up - overlay on the acid diagnosis" },
+    { "id": "D-06", "priority": 6, "description": "Active severe erosion on sloping land", "when": { "flags": ["slope_pct_gt_5", "vegetation_cover_lt_30", "erosion_class_ge_V_or_rills"] }, "then": "EROSION_SEVERE", "modifier": true, "severity": "high", "evidence": "Sheet/rill erosion is removing the A horizon that holds the little available P - overlay alongside the pH diagnosis" },
+    { "id": "D-07", "priority": 7, "description": "Slightly to mildly acidic, non-saline, no modifiers", "when": { "ph": [5.5, 6.5], "ec": [0.0, 0.75], "flags_absent": ["allophane_present", "slope_pct_gt_5"] }, "then": "MARGINALLY_ACIDIC", "modifier": false, "severity": "low", "evidence": "Agronomically acceptable - this is the post-remediation target state" },
+    { "id": "D-08", "priority": 8, "description": "Neutral, non-saline, no modifiers - healthy", "when": { "ph": [6.5, 7.3], "ec": [0.0, 0.75], "flags_absent": ["allophane_present", "slope_pct_gt_5"] }, "then": "HEALTHY", "modifier": false, "severity": "none", "evidence": "Optimum band; maintenance only" },
+    { "id": "D-09", "priority": 9, "description": "Above neutral, non-saline", "when": { "ph": [7.3, 14.0], "ec": [0.0, 0.75] }, "then": "UNDIAGNOSED", "modifier": false, "severity": "low", "evidence": "Unexpected for this soil type - verify meter calibration and request a full exchangeable-cation and ESP test" },
+    { "id": "D-10", "priority": 10, "description": "Fallback - insufficient data", "when": { "ph": [-1.0, 15.0], "ec": [-1.0, 40.0] }, "then": "UNDIAGNOSED", "modifier": false, "severity": "medium", "evidence": "No specific rule matched - request a full soil test before amending" }
+  ],
+
+  "soil_conditions": {
+    "ACID_LOW_BASE": {
+      "name": "Strongly Acidic, Low-Base-Saturation Volcanic Soil",
+      "type": "base",
+      "definition": "pH < 5.5, ECe < 0.75 dS/m, base saturation < 50%, exchangeable Al3+ significant above pH 5.0",
+      "typical_causes": "Intense leaching of bases from pumice/ash; acid parent material; legacy ammonium fertiliser; removal of bases by cropping and burning",
+      "symptoms": "Pruned, stubby roots with blackened tips (Al), poor tillering, purple/red tinting on young leaves (P deficiency induced by Al), Ca/Mg deficiency, crop responds sharply to lime",
+      "diagnostic_thresholds": "Exchangeable Al > 0.5 cmol(c)/kg or Al saturation > 20%; Ca+Mg < 2.0 cmol(c)/kg; buffer pH below the lime-requirement target"
+    },
+    "P_FIXATION_ALLOPHANE": {
+      "name": "Allophane / Volcanic Phosphate Fixation",
+      "type": "modifier",
+      "definition": "Short-range-order allophane, imogolite and amorphous Fe/Al oxides sorb phosphate so rapidly that broadcast P is largely unavailable",
+      "typical_causes": "Young/weakly weathered volcanic ash and pumice (Andosols); acidic conditions keeping Al/Fe oxide edges reactive",
+      "symptoms": "Soil test P low despite a history of P application; crops respond strongly to banded starter P; high anion-exchange capacity; very high P retention",
+      "diagnostic_thresholds": "Ammonium-oxalate Al+Fe > 1.0% (allophane > 6-8%); P retention index > 85%; DPS (oxalate) < 15-20%; Olsen/Truog P < 15 mg/kg"
+    },
+    "EROSION_SEVERE": {
+      "name": "Severe Slope Erosion",
+      "type": "modifier",
+      "definition": "Active sheet/rill erosion on >5% slope with <30% ground cover",
+      "typical_causes": "Bare tilled or burnt slopes after clearing; high-intensity rainfall on low-density pumice/ash; downhill tillage and wheel traffic",
+      "symptoms": "Exposed subsoil, rills, sediment fans, thin or absent A horizon, litter-free surface, water running turbid after every storm"
+    },
+    "MARGINALLY_ACIDIC": {
+      "name": "Mildly Acidic Soil (post-remediation target state)",
+      "type": "base",
+      "definition": "pH 5.5-6.5, ECe < 0.75 dS/m, adequate bases",
+      "typical_causes": "Successful liming and organic matter build",
+      "symptoms": "Good vigour; maintain pH and Mg with maintenance lime"
+    },
+    "HEALTHY": {
+      "name": "Healthy / Agronomically Optimal Soil",
+      "type": "base",
+      "definition": "pH 6.5-7.3, ECe < 0.75 dS/m, organic carbon > 0.75%",
+      "typical_causes": "Balanced weathering and nutrient management",
+      "symptoms": "Normal crop vigour, good tilth, biological activity"
+    },
+    "OUT_OF_SCOPE_SALINITY": {
+      "name": "Salinity detected - protocol halt",
+      "type": "guard",
+      "definition": "ECe >= 0.75 dS/m",
+      "action": "Stop acid-soil remediation; leach salts and restore drainage first (safety guard G-01). Liming fails while salts remain."
+    },
+    "UNDIAGNOSED": {
+      "name": "Insufficient data",
+      "type": "guard",
+      "definition": "No diagnostic rule matched, or required inputs (buffer pH, EC, Al) are missing",
+      "action": "Collect a full laboratory soil test (pH, buffer pH, ECe, exchangeable Al/Ca/Mg/K, Olsen P, organic C) and re-run diagnosis"
+    }
+  },
+
+  "treatment_protocols": {
+    "ACID_LOW_BASE": {
+      "urgency": "priority",
+      "objective": "Raise pH to 5.5-6.0 (target 5.8), neutralise exchangeable Al, restore Ca/Mg/K and rebuild organic matter",
+      "amendments": [
+        { "input": "Corrective agricultural lime (rate from BUFFER pH)", "rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e" }, "escalation_rate": { "min": 4.0, "max": 6.0, "unit": "t/ha CaCO3e (pH <4.5 or exchangeable Al > 2.5 cmol/kg)" }, "method": "Split 60-70% basal incorporated 0-15 cm, 30-40% topdress at 60-90 days if buffer pH still low", "timing": "6-8 weeks before planting; annual top-ups" },
+        { "input": "Dolomitic lime (where exchangeable Mg < 1.0 cmol/kg)", "rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e" }, "method": "Use <= 0.15 mm grind (reacts 2-3x slower than calcitic); never apply together with ammonium fertiliser", "timing": "Pre-plant" },
+        { "input": "Gypsum (subsoil Al, or where lime cannot be worked deep)", "rate": { "min": 2.0, "max": 5.0, "unit": "t/ha" }, "method": "Deep placement or with irrigation water - supplies Ca without raising pH", "timing": "Post-liming" },
+        { "input": "Compost / FYM", "rate": { "min": 8.0, "max": 15.0, "unit": "t/ha" }, "method": "Broadcast, light incorporation; buffers pH, chelates Al, adds Ca and bases", "timing": "Basal" },
+        { "input": "Molybdenum (Na2MoO4)", "rate": { "min": 100, "max": 200, "unit": "g Mo/ha" }, "method": "Seed treatment or 0.1% foliar - restores legume N fixation in acid soil", "timing": "Sowing and early vegetative" },
+        { "input": "Zinc sulphate (if Zn < 0.6 mg/kg DTPA)", "rate": { "min": 10, "max": 25, "unit": "kg ZnSO4/ha" }, "method": "Soil or 0.5% foliar x2", "timing": "Basal + 25 days" },
+        { "input": "Phosphorus - see P_FIXATION_ALLOPHANE", "rate": { "min": 40, "max": 60, "unit": "kg P2O5/ha" }, "method": "Banded 5 cm below seed/sett - never broadcast on acid high-Al soil", "timing": "At planting" }
+      ],
+      "erosion_control": "Mulch 5-8 t/ha; contour strips; close-cover legumes to stop base-cation leaching",
+      "do_not": "Do not use ammonium nitrate/sulphate as the sole N source (further acidification); do not plough on the fall line; do not burn residues; do not over-lime beyond pH 6.5",
+      "follow_up": "Re-test pH, buffer pH and exchangeable Al after 6-8 weeks (lime acts over 4-8 weeks)"
+    },
+    "P_FIXATION_ALLOPHANE": {
+      "urgency": "priority",
+      "objective": "Beat the phosphate sink: lift pH to 5.5-5.8 to reduce Al/Fe reactivity, place P where roots reach it, and use organic matter and mycorrhiza to compete for and bridge sorption sites",
+      "amendments": [
+        { "input": "Lime (prerequisite)", "rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e" }, "method": "Incorporate 6-8 weeks before planting - cuts exchangeable Al and allophane P-sorption capacity", "timing": "Pre-sowing" },
+        { "input": "Reactive (soft) phosphate rock", "rate": { "min": 250, "max": 400, "unit": "kg/ha product (75-140 kg total P2O5)" }, "method": "Fineness 80-90% passing 0.15 mm; banded into the moist root zone - dissolves best at pH 4.5-6.0 and feeds roots continuously for 6-12 months", "timing": "Basal" },
+        { "input": "Single superphosphate / TSP starter", "rate": { "min": 200, "max": 300, "unit": "kg/ha product (40-60 kg P2O5)" }, "method": "STRICTLY BANDED: 5 cm below and 5 cm to the side of the sett/seed - the localised high concentration saturates sorption sites", "timing": "At planting" },
+        { "input": "Compost / FYM + biochar (competes with P for sorption)", "rate": { "min": 8.0, "max": 15.0, "unit": "t/ha compost (+ biochar per remediation_treatment)" }, "method": "Incorporate in the row; humic/fulvic fractions desorb P", "timing": "Basal" },
+        { "input": "Arbuscular mycorrhizal inoculant (AMF)", "rate": { "min": 25, "max": 50, "unit": "kg/ha granular (or 20-50 g per planting hole)" }, "method": "Applied in the planting hole, ideally carried on charged biochar - extends the effective P-depletion zone 3-10x", "timing": "Planting" },
+        { "input": "Sidedress P (crop demand peak)", "rate": { "min": 20, "max": 30, "unit": "kg P2O5/ha" }, "method": "Banded at 45-60 days", "timing": "45-60 days after planting" },
+        { "input": "NH4-based N or nitrification inhibitor", "rate": "as per crop N recommendation (split)", "method": "NH4 uptake lowers rhizosphere pH and liberates sorbed P", "timing": "With N splits" }
+      ],
+      "erosion_control": "On eroded allophane slopes the P-rich ash topsoil washes off first - mulch heavily and never leave bare fallow",
+      "notes": "Target DPS 15-25% for andisols. Expect only 15-40% recovery of fertiliser P - banding is what makes applied P pay. Soluble P in direct contact with the inoculant suppresses AMF colonisation; keep soluble starter P at or below ~30 kg P2O5/ha in the hole.",
+      "follow_up": "Olsen P at 45 and 90 days; re-band if Olsen P < 12 mg/kg"
+    },
+    "EROSION_SEVERE": {
+      "urgency": "emergency",
+      "objective": "Stop soil loss immediately, then rebuild the A horizon",
+      "amendments": [
+        { "input": "Surface mulch (straw, compost, crop residues)", "rate": { "min": 5.0, "max": 8.0, "unit": "t/ha" }, "method": "Continuous organic blanket - cuts raindrop impact 80-95%", "timing": "Immediately, before the next rain" },
+        { "input": "Vetiver grass contour hedgerows", "rate": "1 line per 5-10 m vertical interval (5 m on slopes >15% or where rills are active); 2-3 slips per station at 0.3-0.5 m in-line spacing", "unit": "m vertical interval", "method": "Plant slips on the contour; hedges trap sediment, dissipate runoff and re-level the slope", "timing": "First rains / start of wet season" },
+        { "input": "Jute / coir erosion netting and biodegradable stakes", "rate": "cover 100% of bare or rilled ground", "unit": "", "method": "Staple along the contour over freshly exposed soil and rill lines", "timing": "Immediately" },
+        { "input": "Cover crop / living mulch (Mucuna, Crotalaria, Stylosanthes, cowpea, sweet potato)", "rate": { "min": 20, "max": 40, "unit": "kg/ha seed" }, "method": "Broadcast or row-interseed - reach 100% cover within 45-60 days", "timing": "Immediately after land preparation" },
+        { "input": "Compost (surface, rebuild topsoil)", "rate": { "min": 5.0, "max": 10.0, "unit": "t/ha" }, "method": "Applied under mulch on the contour - do NOT deep-incorporate on a slope", "timing": "Seasonally" },
+        { "input": "Grassed waterways, contour bunds, check dams", "rate": "waterway 3-5 m wide; contour bunds/tied ridges on 5-10% slopes; bench terraces >15% (FAO)", "unit": "", "method": "Permanent grass in drainage lines; small brush/stone check dams in active rills", "timing": "Pre-rains" }
+      ],
+      "do_not": "No clean tillage, no burning, no downhill ploughing, no wheel traffic on wet slopes, no bare inter-row soil after canopy closure",
+      "follow_up": "Photograph fixed points monthly; inspect after every storm; add 2-3 t/ha compost each season until the A horizon recovers"
+    },
+    "MARGINALLY_ACIDIC": {
+      "urgency": "routine",
+      "objective": "Hold pH at 5.8-6.5 and rebuild organic matter",
+      "amendments": [
+        { "input": "Maintenance lime", "rate": { "min": 0.5, "max": 1.0, "unit": "t/ha CaCO3e/year" }, "method": "Surface apply under mulch (no incorporation needed)", "timing": "Annual, pre-wet season" },
+        { "input": "Compost", "rate": { "min": 3.0, "max": 5.0, "unit": "t/ha" }, "method": "Broadcast", "timing": "Each season" },
+        { "input": "Banded P maintenance", "rate": { "min": 20, "max": 40, "unit": "kg P2O5/ha" }, "method": "Row banded", "timing": "At planting" }
+      ],
+      "erosion_control": "Residue retention; keep cover crops between cash crops",
+      "follow_up": "Soil test every 12 months"
+    },
+    "HEALTHY": {
+      "urgency": "maintenance",
+      "objective": "Sustain organic matter, cover and structure",
+      "amendments": [
+        { "input": "Compost / FYM", "rate": { "min": 3.0, "max": 5.0, "unit": "t/ha" }, "method": "Broadcast and incorporate at land prep", "timing": "Pre-sowing" },
+        { "input": "Balanced NPK (site-specific)", "rate": "as per soil test", "unit": "kg/ha", "method": "Split N; band P and K", "timing": "Basal + splits" }
+      ],
+      "erosion_control": "Maintain >= 70% ground cover at all times; contour farming on any slope",
+      "follow_up": "Soil test every 12 months; watch pH drift from acid N fertilisers"
+    },
+    "OUT_OF_SCOPE_SALINITY": {
+      "urgency": "emergency",
+      "objective": "Reclaim salinity first",
+      "amendments": [
+        { "input": "Leaching with good-quality water (ECw < 0.7 dS/m) + drainage", "rate": "leaching fraction per USCC formula", "unit": "fraction of ET", "method": "Ponded leaching with working outlet", "timing": "Before any liming" },
+        { "input": "Gypsum (if SAR/ESP high)", "rate": { "min": 1.0, "max": 5.0, "unit": "t/ha" }, "method": "Broadcast or dissolved in irrigation", "timing": "During leaching" }
+      ],
+      "erosion_control": "Mulch during leaching to prevent crusting and salt-laden runoff",
+      "follow_up": "Re-enter this knowledge base only after ECe < 0.75 dS/m"
+    },
+    "UNDIAGNOSED": {
+      "urgency": "hold",
+      "objective": "Collect data before amending",
+      "amendments": [
+        { "input": "Full soil test (pH, buffer pH, ECe, exchangeable Al/Ca/Mg/K, Olsen P, organic C, optional oxalate Al+Fe)", "rate": "1 composite sample per management unit (20-25 cores, 0-15 cm)", "unit": "", "method": "Grid or zone sampling; record slope and erosion class with each sample", "timing": "Immediately" }
+      ],
+      "erosion_control": "Apply emergency mulch and netting regardless of test results (safe under all diagnoses)",
+      "follow_up": "Re-run diagnosis when results return"
+    }
+  },
+
+  "remediation_treatment": {
+    "applicability": { "base_condition": "ACID_LOW_BASE", "modifiers": ["P_FIXATION_ALLOPHANE", "EROSION_SEVERE"], "scenario_id": "SCEN-VOLC-ACID-001" },
+    "objective": "Convert a severely acidic (pH 4.6), phosphate-fixing, actively eroding ash/pumice surface into a plantable seedbed at pH 5.5-6.0 with plant-available P and a stable soil surface, in one 60-day pre-plant window.",
+    "liming_program": {
+      "target_ph": { "min": 5.5, "max": 6.0, "optimum": 5.8, "rationale": "Neutralises exchangeable Al and maximises P availability while keeping reactive rock phosphate dissolving and micronutrients available; do not exceed 6.5 on andisols" },
+      "rate_determination": "Lime rate (t/ha CaCO3e) = f(buffer pH, exchangeable Al, CEC/texture) from the local lime-requirement table (SMP/Kehres/York). Water pH alone must not be used (guard G-02).",
+      "base_rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e", "condition": "topsoil pH 4.6, loam/silt-loam ash, exchangeable Al 0.5-2.5 cmol/kg" },
+      "high_requirement_rate": { "min": 4.0, "max": 6.0, "unit": "t/ha CaCO3e", "condition": "pH < 4.5, exchangeable Al > 2.5 cmol/kg, or very low base saturation (< 25%)" },
+      "expected_response": { "ph_units_gained": { "min": 0.5, "max": 1.0 }, "reaction_time_weeks": { "min": 4, "max": 8 }, "condition": "lime fineness >= 90% passing 0.85 mm; best results at <= 0.15 mm" },
+      "calcitic_lime": {
+        "chemical": "CaCO3 (approx 36-38% Ca; effective calcium carbonate ECC 90-100%)",
+        "use_when": "exchangeable Mg >= 1.5 cmol/kg OR Mg saturation >= 15% of CEC OR soil has a known Mg history (volcanic ash recently fertilised with dolomitic lime or K-mag fertilisers)",
+        "rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e" },
+        "advantage": "Fast-acting, no Mg-K antagonism, safe where Mg is adequate"
+      },
+      "dolomitic_lime": {
+        "chemical": "CaMg(CO3)2 (approx 20-22% Ca and 11-13% Mg; ECC 90-105%)",
+        "use_when": "exchangeable Mg < 1.0 cmol/kg OR Mg saturation < 10% of CEC OR Ca:Mg ratio > 10:1 - the DEFAULT for strongly leached pumice basins, where Mg has been washed out with the bases",
+        "rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e" },
+        "advantage": "Corrects Mg deficiency in one pass - Mg is required for chlorophyll and Mg-deficiency is common on leached ash soils",
+        "caution": "Reacts 2-3x slower than calcitic - use a fine grind (<= 0.15 mm); do not exceed 1.5x the calcitic rate; excess Mg antagonises K uptake"
+      },
+      "type_decision_table": [
+        { "exchangeable_mg_cmol_kg": { "max": 1.0 }, "lime_type": "dolomitic 100%", "extra": "Add Mg as kieserite (MgSO4) 10-20 kg Mg/ha if Mg < 0.5" },
+        { "exchangeable_mg_cmol_kg": { "min": 1.0, "max": 1.5 }, "lime_type": "50:50 calcitic-dolomitic blend", "extra": "Re-test Mg after one season" },
+        { "exchangeable_mg_cmol_kg": { "min": 1.5 }, "lime_type": "calcitic 100%", "extra": "Protect Mg by keeping mulch and reduced leaching" }
+      ],
+      "split_application": "60-70% basal incorporated 0-15 cm at Day -60; 30-40% topdressed at Day +60 if buffer pH still indicates a deficit",
+      "sloped_ground_rule": "On >5% slopes do not mouldboard or deep-till to incorporate: spread lime under the mulch layer or work it into contour furrows/beds only - tillage on the fall line would accelerate the erosion being treated",
+      "safety_rules": [
+        "Never apply lime and ammonium fertiliser together or within 14 days (volatilisation of NH3 as pH rises)",
+        "Do not apply more than 4 t/ha in a single event; split heavy requirements",
+        "Water lime into the soil after spreading, or apply before rain; never allow dry lime dust to blow off a slope",
+        "Store lime covered - weathered lime loses reactivity"
+      ],
+      "biochar_liming_credit": "Subtract 0.05-0.20 t CaCO3e per tonne of high-pH (pH >= 9) wood biochar from the calculated lime rate"
+    },
+    "biochar_program": {
+      "purpose": ["Permanent raise of CEC and pH buffering (ash soils have low native CEC)", "Sequesters stable carbon and rebuilds degraded topsoil", "Adsorbs and slowly releases bases, reducing leaching losses on slopes", "Improves plant-available water in pumice (typical gain 10-25%)", "Habitat and carrier for mycorrhizal fungi and rhizobia"],
+      "rate": { "min": 5.0, "max": 10.0, "unit": "t/ha", "max_single_event": 15.0, "note": "Higher rates (10-15 t/ha) only in beds and planting rows; on severe slopes prefer 5 t/ha incorporated plus 2-3 t/ha as a surface conditioner under mulch" },
+      "fineness": "Particles < 2 mm for rapid reaction; coarser (2-10 mm) acceptable for long-term structure",
+      "quality_spec": "Per IBI: pH >= 8, H:C(org) <= 0.4, C >= 50%, ash-limited, no PAH or heavy-metal exceedance; wood/feedstock biochar preferred over manure-derived on food crops",
+      "pre_charging_mandatory": "NEVER apply fresh biochar. Age 2-4 weeks: co-compost at a biochar:feedstock ratio of 1:2 (e.g. 5 t biochar + 10 t manure/compost) or soak in nutrient/compost tea until the material is wetted and microbially inoculated. Fresh biochar adsorbs soil N and P, blows as dust, and can carry phytotoxic volatiles.",
+      "application_method": "Incorporate the charged material in the top 0-15 cm at bed preparation, or surface-apply 2-3 t/ha under the mulch on slopes where tillage is prohibited; band the highest rate in the planting row",
+      "p_fixation_caveat": "Fresh, high-ash biochar can itself sorb phosphate; only charged/co-composted biochar with a high base-cation load has a net P benefit on allophane soil",
+      "compost_ratio": "biochar : compost = 1 : 2 (w/w)",
+      "timing": "Day -60 to -30, together with liming"
+    },
+    "phosphorus_liberation_program": {
+      "diagnosis_required": "Olsen/Truog P, plus ammonium-oxalate Al+Fe and DPS if available; target Olsen P 15-25 mg/kg and DPS 15-25% for andisols",
+      "strategy": "Three-layer approach: (1) reactive rock phosphate as a slow, continuous acid-dissolved source, (2) a concentrated soluble starter band to saturate the immediate sorption sites, (3) AMF plus organic matter to extend and protect the P-depletion zone.",
+      "reactive_phosphate_rock": {
+        "input": "Finely ground reactive (soft) phosphate rock (30-36% P2O5)",
+        "rate": { "min": 250, "max": 400, "unit": "kg/ha product (75-140 kg total P2O5)" },
+        "fineness": "80-90% passing 0.15 mm; finer is more reactive",
+        "soil_ph_window": { "min": 4.5, "max": 6.0, "note": "Acid dissolution of carbonate-apatite is fastest below pH 6.0 - the remediated pH 5.5-5.8 is ideal" },
+        "placement": "Banded 10-15 cm below the planting row, into moist soil",
+        "availability_year_1": "15-30% of total P2O5",
+        "timing": "Basal, Day -30"
+      },
+      "soluble_starter": {
+        "input": "Single superphosphate (16-18% P2O5, also supplies S and Ca) or TSP",
+        "rate": { "min": 200, "max": 300, "unit": "kg/ha product = 40-60 kg P2O5/ha" },
+        "placement": "STRICT band: 5 cm below and 5 cm to the side of sett/seed - never broadcast on allophane soil",
+        "timing": "At planting, Day 0"
+      },
+      "sidedress": { "rate": { "min": 20, "max": 30, "unit": "kg P2O5/ha" }, "method": "Banded in the row", "timing": "45-60 days after planting (peak crop demand)" },
+      "mycorrhizal_inoculant": {
+        "type": "Arbuscular mycorrhizal fungi (AMF): Rhizophagus irregularis, Glomus mosseae / Funneliformis mosseae, Claroideoglomus etunicatum, Gigaspora spp.",
+        "rate": { "min": 25, "max": 50, "unit": "kg/ha granular (20-50 g per planting hole)" },
+        "carrier": "Charged biochar or peat carrier - biochar improves hyphal survival and is the preferred on-slope carrier",
+        "placement": "Directly on the sett base / root zone at planting, covered immediately",
+        "why_critical": "Degraded, burnt or heavily tilled ash soils have very low native mycorrhizal inoculum; AMF extend the effective P-depletion zone 3-10x and are the only biological route to the phosphate locked in allophane",
+        "compatibility_rules": [
+          "Co-apply with rock phosphate (not with heavy soluble P) - high soluble P in the hole suppresses colonisation; keep in-hole soluble P at or below ~30 kg P2O5/ha",
+          "Do not mix with high-rate DAP or superphosphate in direct contact",
+          "Avoid broad-spectrum soil fungicides and high-rate nitrification-inhibitor residues near the inoculant",
+          "Inoculate legumes and tubers alike - AMF response is largest on P-fixing soils"
+        ],
+        "timing": "Planting hole, Day 0"
+      },
+      "organic_competitors": { "input": "Compost/FYM + charged biochar", "rate": { "min": 8.0, "max": 15.0, "unit": "t/ha" }, "function": "Humic and fulvic fractions compete with phosphate for allophane sorption sites and desorb already-fixed P" },
+      "rhizosphere_management": "Favour a mild NH4-N contribution or use a nitrification inhibitor: NH4 uptake acidifies the rhizosphere and releases sorbed P; nitrate-only N has the opposite effect",
+      "success_thresholds": ["Olsen P >= 12 mg/kg at 45 days", "Olsen P >= 15 mg/kg at 90 days", "DPS 15-25%", "No visible P-deficiency purpling at 30 days"]
+    },
+    "erosion_stabilization_program": {
+      "phase_0_14_days": [
+        "Mulch the entire slope with 5-8 t/ha straw/residue/compost before the next rainfall event",
+        "Staple jute/coir netting over all bare patches and active rill lines",
+        "Divert upslope runoff into a grassed off-take; cut a temporary grassed waterway (3-5 m) along the drainage line",
+        "Install check dams (brush/stone) in active rills to stop headcutting"
+      ],
+      "phase_14_60_days": [
+        "Survey contours with an A-frame/dumpy level; mark a line every 5-10 m vertical interval (5 m where slope > 15%)",
+        "Plant vetiver slips (Chrysopogon zizanioides) along every contour line - 2-3 slips per station, 0.3-0.5 m apart in-line; grass the waterway",
+        "On 5-10% slopes add contour bunds or tied ridges; on >15% slopes build bench terraces with grassed risers",
+        "Sow the cover crop / living mulch mix and the nurse crop the same day as the main planting"
+      ],
+      "phase_60_90_days": [
+        "Target >= 70% ground cover by Day 30 and 100% cover by Day 60",
+        "Hand-weed only; re-top-up mulch after any storm; inspect vetiver lines and clear any rill forming across them",
+        "Surface-apply 5-10 t/ha compost under mulch to rebuild the A horizon (never deep-incorporate on the slope)"
+      ],
+      "standing_rules": ["No clean tillage, no burning, no downhill ploughing, no wheel traffic on wet soil", "No bare inter-row soil after canopy closure", "Harvest and replant the same week - never leave a harvested slope exposed"]
+    },
+    "application_sequence": [
+      { "step": 1, "day": "Day -60", "action": "Soil test + buffer pH + slope survey; order lime, charged biochar, reactive rock phosphate, SSP, AMF, vetiver slips, mulch, planting stakes (guard G-02)" },
+      { "step": 2, "day": "Day -60", "action": "Apply 60-70% of the calcitic/dolomitic lime rate (type chosen from exchangeable Mg) under light incorporation or beneath mulch; begin co-composting biochar (1:2)" },
+      { "step": 3, "day": "Day -60 to -45", "action": "Emergency erosion works: mulch 5-8 t/ha, jute netting, check dams, vetiver contour lines, grassed waterways (guard G-04)" },
+      { "step": 4, "day": "Day -30", "action": "Make contour rows/beds; band reactive rock phosphate 250-400 kg/ha + SSP 200-300 kg/ha in the planting row; incorporate charged biochar 5-10 t/ha with 8-15 t/ha compost; band K 40-60 kg K2O/ha (pumice leaches K rapidly)" },
+      { "step": 5, "day": "Day -14", "action": "Spot re-test pH - confirm >= 5.5 before planting; if pH < 5.3 apply the remaining lime topdress and delay planting by 2 weeks" },
+      { "step": 6, "day": "Day -7 to Day 0", "action": "Prepare planting stakes/vines, set up protein trays, confirm contour structures and mulch are intact" },
+      { "step": 7, "day": "Day 0", "action": "Plant the main starch crop with AMF in the planting hole; plant the nurse/cover crop the same day; start the emergency protein relay" },
+      { "step": 8, "day": "Day +45 / +90", "action": "Verify: pH 5.5-6.0, Olsen P >= 12-15 mg/kg, ground cover >= 70% at Day 30 and 100% at Day 60; re-band P if deficient" }
+    ]
+  },
+
+  "emergency_protein_under_25_days": {
+    "requirement": "Edible protein available within 25 days of Day 0 (Day 0 = arrival/planting day)",
+    "core_principle": "Grow sprouts and microgreens OFF-SOIL in clean trays with plain water. This decouples emergency nutrition from the liming/reclamation programme: no soil, no pH dependence, no wait for lime to react, no erosion exposure. A soil-planted amaranth/legume-leaf relay is the backup layer.",
+    "system": {
+      "production_unit": "Shallow trays or a bench 0.5-1.0 m^2, shade house or covered area, clean water, no fertiliser needed",
+      "stagger_rule": "Start new trays every 2-3 days from Day 0 (Day 0, 3, 6, 9...) so harvests overlap continuously to Day 25",
+      "space_per_person": { "min": 0.4, "max": 0.5, "unit": "m^2 of tray area per person for the full 25-day window", "basis": "60-100 g fresh sprouts/person/day" },
+      "environment": "20-25 C, indirect light; rinse with clean water 2-3 times per day; always drain fully - never let seed sit in standing water"
+    },
+    "crops": [
+      { "rank": 1, "crop": "Pea shoots", "scientific_name": "Pisum sativum", "type": "fast pulse microgreen", "germination_days": { "min": 6, "max": 10 }, "harvest_day": { "min": 10, "max": 15 }, "seed_rate_g_per_m2": { "min": 100, "max": 150 }, "fresh_yield_kg_per_m2_per_cut": { "min": 0.3, "max": 0.7 }, "cuts": 2, "protein_fresh_g_per_100g": 3.0, "method": "Soak seed 8-12 h; sow densely on a moist substrate or hydroponic mat; grow 10-15 cm; cut the top 8-10 cm leaving 2 nodes for a second cut 5-7 days later", "notes": "Highest-yielding and most forgiving shoot crop; edible pods/seed are also food; untreated seed only" },
+      { "rank": 2, "crop": "Mung bean sprouts (green gram)", "scientific_name": "Vigna radiata", "type": "sprouted legume", "germination_days": { "min": 3, "max": 5 }, "harvest_day": { "min": 8, "max": 12 }, "seed_rate_g_per_m2": { "min": 250, "max": 500 }, "fresh_yield_multiple_of_seed_weight": { "min": 4, "max": 6 }, "protein_fresh_g_per_100g": 3.1, "method": "Soak 6-8 h; sow in trays; cover 2-3 days in the dark to etiolate; rinse 2-3x/day; harvest when roots are 1-2 cm and the shoot is 5-10 cm", "notes": "Fastest reliable protein in the system; dry seed is ~24% protein; keep dry-seed reserves as the long-term protein stock" },
+      { "rank": 3, "crop": "Lentil sprouts", "scientific_name": "Lens culinaris", "type": "sprouted legume", "germination_days": { "min": 2, "max": 4 }, "harvest_day": { "min": 8, "max": 12 }, "seed_rate_g_per_m2": { "min": 300, "max": 400 }, "fresh_yield_multiple_of_seed_weight": { "min": 3, "max": 5 }, "protein_fresh_g_per_100g": 3.0, "method": "Soak 8-12 h; tray sprout with daily rinsing; harvest at 2-4 cm tail", "notes": "Also cooks as a whole pulse at 12-14 days; tolerates cooler ambient temperatures" },
+      { "rank": 4, "crop": "Cowpea sprouts (black-eyed pea)", "scientific_name": "Vigna unguiculata", "type": "sprouted legume", "germination_days": { "min": 3, "max": 5 }, "harvest_day": { "min": 8, "max": 12 }, "seed_rate_g_per_m2": { "min": 300, "max": 400 }, "fresh_yield_multiple_of_seed_weight": { "min": 4, "max": 6 }, "protein_fresh_g_per_100g": 3.0, "method": "Soak 6-8 h; tray sprout; rinse twice daily", "notes": "Cowpea seed is acid-soil adapted and available locally; also sows into the field as the cover crop at Day 0" },
+      { "rank": 5, "crop": "Chickpea sprouts (bengal gram)", "scientific_name": "Cicer arietinum", "type": "sprouted legume", "germination_days": { "min": 4, "max": 6 }, "harvest_day": { "min": 10, "max": 14 }, "seed_rate_g_per_m2": { "min": 400, "max": 600 }, "fresh_yield_multiple_of_seed_weight": { "min": 3, "max": 4 }, "protein_fresh_g_per_100g": 3.2, "method": "Soak 12 h; sprout in a moist cloth or tray; rinse twice daily; harvest when tail equals seed length", "notes": "Best roasted/cooked; holds as a dry reserve pulse" },
+      { "rank": 6, "crop": "Amaranth leaf (soil-bed fallback)", "scientific_name": "Amaranthus spp.", "type": "leaf protein (field relay)", "germination_days": { "min": 4, "max": 7 }, "harvest_day": { "min": 20, "max": 25 }, "seed_rate_g_per_m2": { "min": 2, "max": 5 }, "fresh_yield_kg_per_m2_over_window": { "min": 1.5, "max": 2.5 }, "protein_fresh_g_per_100g": 3.8, "method": "Broadcast densely on a moist bed or inter-sow between crop rows; thin at Day 7; first cut Day 20-25 (cut top 5 cm, leave 2 nodes); cut-and-come-again every 7-10 days", "notes": "Leaf protein 3-4x spinach; also tolerates pH 5-7.5 - still sow the majority off-tray so liming does not gate protein" }
+    ],
+    "schedule": [
+      { "day": "Day 0", "action": "Sow tray 1 (mung) + tray 2 (pea shoots) + amaranth block; soak chickpea/lentil for the next stagger" },
+      { "day": "Day 3 / 6 / 9", "action": "Sow staggered trays 3, 4, 5" },
+      { "day": "Day 8-12", "action": "FIRST HARVEST: mung, lentil, cowpea sprouts - protein secured" },
+      { "day": "Day 10-15", "action": "Pea shoot first cut (second cut Day 18-22)" },
+      { "day": "Day 20-25", "action": "Amaranth leaf first cut - closes the 25-day requirement" }
+    ],
+    "food_safety": [
+      "Rinse 2-3x/day with clean water and drain fully - standing water causes bacterial and mould losses",
+      "Discard any tray with off smells, sliminess or visible mould immediately",
+      "Cook sprouts briefly (2-3 min) for children, elderly and immunocompromised people",
+      "Keep dry seed reserves dry and rodent-proof - they are the protein insurance after Day 25"
+    ],
+    "escalation_after_day_25": [
+      "Day 25-60: continue amaranth and cowpea leaf cuts (cut-and-come-again every 7-10 days)",
+      "Day 45-90: mung/cowpea grown out for seed harvest (60-90 days)",
+      "Day 60-90: pigeon pea and cowpea pods in the field; dry-pulse harvest from Day 90"
+    ]
+  },
+
+  "starch_root_crop_strategy": {
+    "selection_logic": "The basin needs a long-term, high-yield, acid-tolerant survival staple that tolerates pH 4.6 and low-P andosol conditions, plus an immediate living-mulch crop that closes the slope cover gap within 45-60 days. The two are established together: cassava as the survival anchor, sweet potato as the nurse/erosion crop and first starch, taro for wet niches.",
+    "long_term_survival_crop": {
+      "crop": "Cassava",
+      "scientific_name": "Manihot esculenta",
+      "role": "primary high-yield starch root crop / long-term survival crop",
+      "ph_tolerance": { "min": 4.3, "max": 7.8, "optimum": { "min": 5.5, "max": 6.5 }, "note": "One of the most acid-tolerant staples; yields improve sharply once pH >= 5.5 releases Al-bound P" },
+      "yield_potential_t_per_ha": { "min": 25, "max": 40, "realistic_first_cycle_degraded": { "min": 15, "max": 25 } },
+      "days_to_harvest": { "baby": { "min": 180, "max": 240 }, "main": { "min": 270, "max": 360 }, "in_ground_survival": "roots can be left standing and harvested progressively for up to 12-18 months - the defining survival trait" },
+      "survival_traits": ["Drought hardy once established", "Tolerates low fertility and high Al when pH is corrected", "Harvest can be deferred indefinitely in a food crisis", "Stakes are their own planting material (no seed supply chain)"],
+      "constraints": ["Roots perish 24-72 h after lifting - harvest in batches and process same day", "Cyanogenic glycosides - peel/soak/boil or ferment before eating (guard G-05)", "Poor ground cover in the first 60-90 days - MANDATORY nurse system on eroding slopes", "Requires K: pumice leaches K rapidly - apply 60-80 kg K2O/ha"]
+    },
+    "first_cycle_crop": {
+      "crop": "Sweet potato",
+      "scientific_name": "Ipomoea batatas",
+      "role": "living mulch / erosion blanket + first starch (baby tubers at Day 90) + edible leaves from Day 25",
+      "ph_tolerance": { "min": 4.5, "max": 7.0 },
+      "yield_potential_t_per_ha": { "min": 8, "max": 25 },
+      "days_to_harvest": { "baby": { "min": 75, "max": 100 }, "main": { "min": 120, "max": 150 } },
+      "function": "Ground cover reaches 100% by Day 45-60, closing the erosion window before the cassava canopy closes; dense fibrous roots are efficient P scavengers on allophane soil"
+    },
+    "wet_niche_crop": {
+      "crop": "Taro",
+      "scientific_name": "Colocasia esculenta",
+      "role": "starch for wet drain margins, shaded and terrace micro-sites",
+      "ph_tolerance": { "min": 4.5, "max": 7.0 },
+      "yield_potential_t_per_ha": { "min": 10, "max": 25 },
+      "days_to_harvest": { "min": 120, "max": 180 },
+      "function": "Traditional volcanic-soil crop; stabilises wet drain lines and shaded slopes where vetiver and grassed waterways are installed"
+    },
+    "conditional_deferred_options": [
+      { "crop": "Potato", "scientific_name": "Solanum tuberosum", "condition": "Plant only in Season 2+ after liming has held pH >= 5.5 and micro-terraces are built; hilling disturbs soil so it is unsuitable on an actively eroding slope", "ph_optimum": "5.0-6.5", "days_to_harvest": "75-110", "note": "The reference Andosol crop - high yield once P is band-placed" },
+      { "crop": "Pineapple", "scientific_name": "Ananas comosus", "condition": "Perennial slope mat for gentle gradients", "ph_optimum": "4.5-6.5", "days_to_harvest": "540-720" }
+    ]
+  },
+
+  "crop_recommendations": {
+    "ACID_LOW_BASE+P_FIXATION_ALLOPHANE+EROSION_SEVERE": [
+      { "rank": 1, "crop": "Cassava", "scientific_name": "Manihot esculenta", "role": "starch root (primary survival crop)", "ph_tolerance": "4.3-7.8 (opt 5.5-6.5)", "days_to_first_harvest": "180-240 baby / 270-360 full", "erosion_control_rating": "moderate - acceptable ONLY with the mandatory nurse system (mulch + vetiver + sweet potato living mulch); no inter-row tillage", "p_strategy": "Banded rock phosphate + SSP starter + AMF; responds strongly once pH >= 5.5", "yield_potential_t_per_ha": "15-25 (degraded first cycle), 25-40 (reclaimed)", "score": 91, "notes": "Highest combined fit: most acid-tolerant staple, 12-18 month in-ground survival reserve, own vegetative planting material, highest calorie yield per hectare" },
+      { "rank": 2, "crop": "Sweet potato", "scientific_name": "Ipomoea batatas", "role": "starch root (nurse crop) + erosion blanket + edible leaves", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "75-100 baby / 120-150 full", "erosion_control_rating": "excellent - full ground cover by Day 45-60, roots bind soil, leaf litter mulches the surface", "p_strategy": "Dense fibrous roots are efficient P scavengers; banded P + AMF lifts yield sharply", "yield_potential_t_per_ha": "8-25", "score": 87, "notes": "Planted the same day as cassava between the rows: closes the 60-day erosion gap and gives first starch at Day 90" },
+      { "rank": 3, "crop": "Taro", "scientific_name": "Colocasia esculenta", "role": "starch root (wet niche)", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-180", "erosion_control_rating": "good - stabilises wet drains, terrace edges and shaded gully heads", "p_strategy": "Moderate P demand; responds to band P and compost", "yield_potential_t_per_ha": "10-25", "score": 78, "notes": "Traditional humid volcanic-slope crop; shade tolerant under alley rows" },
+      { "rank": 4, "crop": "Cowpea", "scientific_name": "Vigna unguiculata", "role": "protein pulse + cover crop + N fixation", "ph_tolerance": "4.5-7.5 (acid tolerant)", "days_to_first_harvest": "8-12 sprouts / 60-90 seed", "erosion_control_rating": "good - fast prostrate cover between rows from Day 0", "p_strategy": "Use acid-tolerant lines with Mo seed treatment; AMF + banded P", "yield_potential_t_per_ha": "1-2 grain + 2-4 t/ha haulm", "score": 76, "notes": "Fixes 40-70 kg N/ha, supplies emergency protein, seeds the next rotation" },
+      { "rank": 5, "crop": "Pineapple", "scientific_name": "Ananas comosus", "role": "fruit / perennial slope cover", "ph_tolerance": "4.5-6.5 (acid-soil native)", "days_to_first_harvest": "540-720", "erosion_control_rating": "very good - permanent rosette mat, no tillage after establishment", "p_strategy": "Low P demand; well suited to unlimed acid micro-sites", "yield_potential_t_per_ha": "40-60 (long cycle)", "score": 71, "notes": "Long-cycle reserve crop for gentle slopes outside the main production block" }
+    ],
+    "ACID_LOW_BASE": [
+      { "rank": 1, "crop": "Cassava", "scientific_name": "Manihot esculenta", "role": "starch/root", "ph_tolerance": "4.3-7.8", "days_to_first_harvest": "270-360", "notes": "Most acid-tolerant staple; liming to 5.5+ unlocks 30-60% yield response" },
+      { "rank": 2, "crop": "Sweet potato", "scientific_name": "Ipomoea batatas", "role": "starch/root", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-150", "notes": "Tolerates strong acidity and gives early leaf nutrition" },
+      { "rank": 3, "crop": "Taro", "scientific_name": "Colocasia esculenta", "role": "starch/corm", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-180", "notes": "Thrives in humid acid valleys" },
+      { "rank": 4, "crop": "Cowpea", "scientific_name": "Vigna unguiculata", "role": "protein/pulse", "ph_tolerance": "4.5-7.5", "days_to_first_harvest": "60-90", "notes": "Acid-tolerant N-fixer" },
+      { "rank": 5, "crop": "Potato", "scientific_name": "Solanum tuberosum", "role": "starch/tuber", "ph_tolerance": "4.8-6.5", "days_to_first_harvest": "75-110", "notes": "Only after liming to 5.5-6.0" }
+    ],
+    "P_FIXATION_ALLOPHANE": [
+      { "rank": 1, "crop": "Cassava", "scientific_name": "Manihot esculenta", "role": "starch/root", "ph_tolerance": "4.3-7.8", "days_to_first_harvest": "270-360", "notes": "Efficient on banded P with AMF; tolerates low test-P soils" },
+      { "rank": 2, "crop": "Sweet potato", "scientific_name": "Ipomoea batatas", "role": "starch/root", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-150", "notes": "Dense fibrous P-scavenging root system; banded P + VAM" },
+      { "rank": 3, "crop": "Taro", "scientific_name": "Colocasia esculenta", "role": "starch/corm", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-180", "notes": "Classic Pacific/Indonesian andisol crop" },
+      { "rank": 4, "crop": "Cowpea", "scientific_name": "Vigna unguiculata", "role": "protein/pulse", "ph_tolerance": "4.5-7.5", "days_to_first_harvest": "60-90", "notes": "AMF-dependent P uptake - responds strongly to inoculation" },
+      { "rank": 5, "crop": "Mung bean", "scientific_name": "Vigna radiata", "role": "protein/pulse", "ph_tolerance": "4.6-7.5", "days_to_first_harvest": "60-90", "notes": "Fast protein; sprouts also deliver Day 8-12 nutrition" }
+    ],
+    "EROSION_SEVERE": [
+      { "rank": 1, "crop": "Sweet potato", "scientific_name": "Ipomoea batatas", "role": "living mulch + starch", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-150", "notes": "Fastest complete ground cover of the food crops" },
+      { "rank": 2, "crop": "Cowpea (cover)", "scientific_name": "Vigna unguiculata", "role": "cover + protein", "ph_tolerance": "4.5-7.5", "days_to_first_harvest": "60-90", "notes": "Fast inter-row cover, fixes N" },
+      { "rank": 3, "crop": "Cassava (with nurse system)", "scientific_name": "Manihot esculenta", "role": "starch/root", "ph_tolerance": "4.3-7.8", "days_to_first_harvest": "270-360", "notes": "Plant only on contour lines with mulch, vetiver and a living mulch; no inter-row tillage" },
+      { "rank": 4, "crop": "Pineapple", "scientific_name": "Ananas comosus", "role": "perennial mat", "ph_tolerance": "4.5-6.5", "days_to_first_harvest": "540-720", "notes": "Permanent no-till slope mat on gentle gradients" },
+      { "rank": 5, "crop": "Vetiver grass (structural, non-food)", "scientific_name": "Chrysopogon zizanioides", "role": "contour hedgerow", "ph_tolerance": "4.5-9.0", "days_to_first_harvest": "n/a - planted once", "notes": "Not a food crop: installed on every contour line to trap sediment; pair with all food crops" }
+    ],
+    "MARGINALLY_ACIDIC": [
+      { "rank": 1, "crop": "Cassava", "scientific_name": "Manihot esculenta", "role": "starch/root", "ph_tolerance": "4.3-7.8", "days_to_first_harvest": "270-360", "notes": "Optimum production band after remediation" },
+      { "rank": 2, "crop": "Sweet potato", "scientific_name": "Ipomoea batatas", "role": "starch/root", "ph_tolerance": "4.5-7.0", "days_to_first_harvest": "120-150", "notes": "Continues as cover crop" },
+      { "rank": 3, "crop": "Potato", "scientific_name": "Solanum tuberosum", "role": "starch/tuber", "ph_tolerance": "5.0-6.5", "days_to_first_harvest": "75-110", "notes": "Now viable - the reference andisol high-yield crop" },
+      { "rank": 4, "crop": "Maize", "scientific_name": "Zea mays", "role": "starch/cereal", "ph_tolerance": "5.8-7.0", "days_to_first_harvest": "90-120", "notes": "With banded starter P" },
+      { "rank": 5, "crop": "Cowpea", "scientific_name": "Vigna unguiculata", "role": "protein/pulse", "ph_tolerance": "4.5-7.5", "days_to_first_harvest": "60-90", "notes": "Rotation N-fixer" }
+    ]
+  },
+
+  "cultivation_roadmaps": [
+    {
+      "roadmap_id": "RM-CASSAVA-ACID-VOLCANIC",
+      "crop": "Cassava",
+      "scientific_name": "Manihot esculenta",
+      "rank_ref": "crop_recommendations['ACID_LOW_BASE+P_FIXATION_ALLOPHANE+EROSION_SEVERE'][0]",
+      "target_condition": ["ACID_LOW_BASE", "P_FIXATION_ALLOPHANE", "EROSION_SEVERE"],
+      "difficulty": "beginner",
+      "total_duration_days": "300-365 (main harvest); protein secured within 25 days; first starch (sweet potato nurse) at 90-150 days",
+      "planting_material": "Vegetative stakes: 20-25 cm long, 5-8 nodes, pencil-thick, cut from healthy 6-12 month old lateral branches of disease-free mother plants; plant within 24-48 h of cutting; dip cut ends in wood ash or a labelled fungicide; rate 10,000-13,000 stakes/ha",
+      "spacing": "1.0 m between rows x 0.8 m between plants (12,500 plants/ha); all rows on the contour",
+      "emergency_protein_plan": {
+        "requirement": "Edible protein by Day 25 from Day 0",
+        "method": "Off-soil tray relay started the same day as planting (independent of the limed soil), plus an in-field leaf relay",
+        "steps": [
+          "Day 0: sow mung bean tray 1 and pea shoot tray 2; soak lentil/chickpea for the Day 3 stagger",
+          "Day 0: broadcast a 1-2 m^2 amaranth block in a moist, sheltered bed as the in-field backup",
+          "Day 3/6/9: sow staggered trays so harvests overlap",
+          "Day 8-12: harvest mung/lentil/cowpea sprouts - first protein met",
+          "Day 10-15: first pea shoot cut; second cut Day 18-22",
+          "Day 20-25: first amaranth leaf cut - requirement closed"
+        ],
+        "detail_ref": "emergency_protein_under_25_days"
+      },
+      "phases": [
+        {
+          "phase": 1,
+          "name": "Diagnosis and Lime Requirement",
+          "day_range": "Day -120 to Day -61",
+          "steps": [
+            "Take a composite soil sample (20-25 cores, 0-15 cm per management unit): pH, buffer pH (SMP/Kehres), ECe, exchangeable Al/Ca/Mg/K, Olsen or Truog P, organic C; request oxalate Al+Fe and P retention if available.",
+            "Record slope percent, ground cover percent and erosion class with the sample (photograph fixed reference points).",
+            "Compute the lime rate from BUFFER pH, not water pH (guard G-02). Default band for pH 4.6 is 2-4 t/ha CaCO3e; 4-6 t/ha if exchangeable Al > 2.5 cmol/kg.",
+            "Choose the lime type from exchangeable Mg: <1.0 cmol/kg = dolomitic (default for leached pumice basins); 1.0-1.5 = 50:50 blend; >1.5 = calcitic.",
+            "Confirm ECe < 0.75 dS/m (guard G-01) before committing to the programme.",
+            "Order inputs: lime, biochar feedstock for co-composting, reactive rock phosphate, SSP, charged biochar, K fertiliser, AMF inoculant, vetiver slips, mulch material, jute netting, cassava stakes, sweet potato vines, pea/mung/lentil seed."
+          ],
+          "inputs": ["Soil test (lab)", "A-frame or dumpy level", "Lime (calcitic or dolomitic) 2-4 t/ha", "Biochar 5-10 t/ha for charging", "Reactive rock phosphate 250-400 kg/ha", "SSP 200-300 kg/ha", "AMF inoculant 25-50 kg/ha", "K fertiliser 40-60 kg K2O/ha", "Vetiver slips", "Mulch 8-15 t/ha", "Jute/coir netting"],
+          "checkpoint": "Buffer pH recorded; lime type decided; ECe confirmed non-saline"
+        },
+        {
+          "phase": 2,
+          "name": "Liming, Biochar Charging and Contour Works",
+          "day_range": "Day -60 to Day -31",
+          "steps": [
+            "Broadcast 60-70% of the lime rate and work it into the top 0-15 cm by light rotavation or hand forking on beds; on slopes >5% spread it under the mulch layer or in contour furrows only - never plough on the fall line.",
+            "Start charging the biochar: co-compost biochar at 1:2 with manure/compost for 2-4 weeks, or soak in compost tea (never apply fresh biochar).",
+            "Emergency erosion works (guard G-04): mulch the whole slope 5-8 t/ha; staple jute/coir netting over bare ground and rills; cut brush check dams into active rills.",
+            "Mark contour lines every 5-10 m vertical interval (5 m on slopes >15%) with the A-frame; plant vetiver slips along each line (2-3 slips per station, 0.3-0.5 m apart in-line) and grass the waterway.",
+            "Surface-apply 5-10 t/ha compost under the mulch to start rebuilding the A horizon - do not deep-incorporate on the slope.",
+            "Wait: lime needs 4-8 weeks to react. Do not plant into unlimed soil when pH < 5.0."
+          ],
+          "inputs": ["Lime 60-70% of total rate", "Mulch 5-8 t/ha", "Jute/coir netting", "Vetiver slips", "Compost 5-10 t/ha", "Biochar + compost for co-composting"],
+          "checkpoint": "Slope fully covered before the next rain; vetiver lines planted; no bare soil visible"
+        },
+        {
+          "phase": 3,
+          "name": "Beds, Phosphorus Placement and Inoculation",
+          "day_range": "Day -30 to Day -8",
+          "steps": [
+            "Spot re-test pH: proceed only at pH >= 5.5; if still < 5.3, apply the remaining lime topdress and delay planting by 2 weeks.",
+            "Make contour rows / broad beds 80-100 cm wide; on >15% slopes build bench terraces first.",
+            "Incorporate the charged biochar (5-10 t/ha) with 8-15 t/ha compost in the planting rows only.",
+            "Band phosphorus in the row: reactive rock phosphate 250-400 kg/ha at 10-15 cm depth plus SSP 200-300 kg/ha (40-60 kg P2O5) at 5 cm below and to the side of the future stake position - never broadcast (allophane would fix it).",
+            "Band K (40-60 kg K2O/ha) - pumice and ash leach potassium rapidly.",
+            "Prepare charged biochar as the AMF carrier: mix the granular inoculant 1:5 with charged biochar; keep it in the shade, dry and out of direct sun.",
+            "Prepare the emergency protein area: shade a bench or stack trays 0.4-0.5 m^2 per person, clean water and drainage.",
+            "Prepare nurse-crop material: sweet potato vine tips 25-35 cm with 3-4 nodes.",
+            "Confirm contour structures and mulch are intact before the first rain (guard G-04)."
+          ],
+          "inputs": ["Charged biochar 5-10 t/ha", "Compost 8-15 t/ha", "Rock phosphate 250-400 kg/ha", "SSP 200-300 kg/ha", "K fertiliser", "AMF + biochar carrier", "Protein trays", "Sweet potato vines"],
+          "checkpoint": "pH >= 5.5 confirmed; P banded; beds and contours complete"
+        },
+        {
+          "phase": 4,
+          "name": "Planting and Day 0 Protein Relay",
+          "day_range": "Day -7 to Day 0",
+          "steps": [
+            "Cut stakes on planting day from the stored bundle; reject any with rot, pith holes or pest damage.",
+            "Plant stakes on the contour at 1.0 x 0.8 m: insert about two-thirds of the stake (12-15 cm) with 1-2 nodes above ground, at a slight angle; firm the soil firmly around each stake.",
+            "Apply 20-50 g of AMF + charged biochar mix directly to the base of each stake as it is set.",
+            "Water each stake with 2-3 L to settle the soil.",
+            "SAME DAY: plant the sweet potato nurse crop in the alleys between cassava rows (80 cm rows x 30 cm, or broadcast vines on the flat) - this is the erosion cover and the first starch.",
+            "SAME DAY: sow emergency protein tray 1 (mung) and tray 2 (pea shoots), soak lentil/chickpea for the Day 3 stagger, broadcast the amaranth block - Day 0 of the 25-day protein clock.",
+            "Spread 5-8 t/ha mulch over all bare soil between rows.",
+            "Plant a cowpea cover row along each contour berm (20-30 kg/ha) for N fixation and additional cover.",
+            "Record planting date: every day count below is relative to Day 0."
+          ],
+          "inputs": ["Cassava stakes 10,000-13,000/ha", "AMF 25-50 g per stake base", "Sweet potato vines", "Cowpea seed", "Mulch 5-8 t/ha", "Protein seed (mung, pea, lentil, chickpea) 3-5 kg total", "Amaranth seed 50 g", "Water 60-80 m3/ha"],
+          "checkpoints": [">= 90% stake sprouting by Day 21", "No stake dislodged by wind/rain at Day 7", "Trays germinating by Day 5"]
+        },
+        {
+          "phase": 5,
+          "name": "Emergency Protein Window",
+          "day_range": "Day 1 to Day 25",
+          "steps": [
+            "Trays: rinse 2-3x per day with clean water, drain fully, keep at 20-25 C in indirect light; discard any tray with slime, off smell or mould (food safety).",
+            "Harvest mung/lentil/cowpea sprouts at Day 8-12 when roots are 1-2 cm - first protein met; continue harvest from staggered trays every 2-3 days.",
+            "First pea shoot cut at Day 10-15 (cut the top 8-10 cm, leave 2 nodes); second cut Day 18-22.",
+            "Amaranth: thin to 2-3 cm at Day 7; first leaf cut at Day 20-25 (cut top 5 cm, leave 2 nodes); target 1.5-2.5 kg fresh leaf per m2 across the window.",
+            "Check cassava stakes for sprouting: replace any dead or rotted stakes with fresh ones at Day 10-14 (keep the hole count constant).",
+            "First weeding at Day 12-15 - by hand only, no tillage on the slope; re-mulch anything exposed.",
+            "Sweet potato: vines root and run; remove flower buds (flowering = stress); fill any gaps.",
+            "Water only if there has been no rain for 7-10 days; never waterlog (stake rot and root rot risk)."
+          ],
+          "targets": ["Protein secured by Day 8-12 (sprouts) and closed by Day 25 (amaranth leaf)", "Sweet potato ground cover > 40% by Day 25", "Zero bare soil visible", "Cassava sprouting >= 90% by Day 21"]
+        },
+        {
+          "phase": 6,
+          "name": "Establishment and Cover Closure",
+          "day_range": "Day 26 to Day 90",
+          "steps": [
+            "Weed by hand or by smothering with mulch at Day 30-45 and Day 60-75 - never inter-row tillage (it re-opens the erosion window).",
+            "Top up mulch after every storm; keep total cover at or above 90%.",
+            "First nitrogen: only if the cassava leaves pale - 30 kg N/ha as a side dress at Day 45-60; the cowpea cover and residues normally supply enough for the first cycle.",
+            "Scout for cassava whitefly, mealybug, green mite and mosaic virus: destroy infested plants, use tolerant clones, and remove wild Ipomoea/weed hosts that carry pests.",
+            "Check vetiver lines and grassed waterways after each storm; clear any rill forming across a contour line within 48 hours.",
+            "Continue amaranth and cowpea leaf cuts every 7-10 days (protein layer).",
+            "Optional: lift a few baby sweet potatoes at Day 90-100 (target 100-200 g each) - first starch.",
+            "Sidedress banded P (20-30 kg P2O5/ha) at Day 45-60 for the allophane soil.",
+            "Target: full ground cover by Day 60 - from here the crop itself controls erosion."
+          ],
+          "targets": ["Ground cover >= 70% at Day 30, 100% at Day 60", "Cassava canopy beginning to close at Day 90", "No new rill extension since Day 0"]
+        },
+        {
+          "phase": 7,
+          "name": "Canopy Closure and Tuber Bulking",
+          "day_range": "Day 91 to Day 240",
+          "steps": [
+            "Stop all nitrogen after Day 90 (excess N produces leaves, not roots); all crop N should be applied within the first 60-90 days.",
+            "Sidedress potassium at Day 90-120 (60-80 kg K2O/ha) - K builds dry matter and is rapidly leached from pumice.",
+            "Harvest the main sweet potato nurse crop at Day 120-150 and IMMEDIATELY re-mulch the exposed alleys and sow a cowpea/Mucuna cover - a harvested slope must never be left bare.",
+            "Continue hand weeding; keep mulch at 5-8 t/ha; do not disturb the cassava root zone.",
+            "Inspect contour structures after every storm; repair vetiver gaps.",
+            "Monitor for cassava bacterial blight and anthracnose: remove and burn infected material, avoid wetting foliage late in the day.",
+            "Interplant taro suckers in wet drain margins and shaded terrace edges (Day 120-150) as the next starch layer.",
+            "Continue protein layer: dry-pulse harvest of mung/cowpea from Day 90."
+          ],
+          "targets": ["Cassava canopy closed by Day 90-150", "Zero erosion events since Day 60", "Sweet potato main crop lifted at Day 120-150 with immediate re-cover"]
+        },
+        {
+          "phase": 8,
+          "name": "Harvest, Processing and Storage",
+          "day_range": "Day 241 to Day 330",
+          "steps": [
+            "Test lift at Day 180-240 (baby harvest): target 1.5-2.5 kg per plant.",
+            "Main harvest at Day 270-360 when the lower leaves yellow and the skin of the oldest tuber is easy to score.",
+            "Harvest in small batches to the household's 2-3 day requirement - lifted roots deteriorate within 24-72 hours; the standing crop IS the storage (leave unlifted roots in the ground until needed, up to 12-18 months).",
+            "PROCESS BEFORE EATING (guard G-05): peel, cut into chips or shreds, soak in water 24-48 h (or ferment), rinse, then boil thoroughly or sun-dry; cook leaves 10-15 minutes. Never eat raw cassava.",
+            "Lift with a fork, avoiding punctures; keep stakes from selected healthy plants wrapped in damp material for the next cycle.",
+            "Record yield (target 15-25 t/ha first cycle on the reclaimed ash soil, 25-40 t/ha once the soil is fully remediated).",
+            "Store dried chips/flour in a cool, dry, rodent-proof container - keeps 6-12 months.",
+            "Post-harvest the same week: surface-spread 3-5 t/ha compost and sow a legume cover crop (Mucuna/Crotalaria) - never leave the slope bare."
+          ],
+          "inputs": ["Harvest forks and baskets", "Soaking vessels", "Drying racks / solar dryer", "Sealed storage containers", "Compost 3-5 t/ha", "Cover crop seed"],
+          "targets": ["Yield 15-25 t/ha (first cycle)", "Zero raw-product consumption", "Zero bare soil after harvest"]
+        },
+        {
+          "phase": 9,
+          "name": "Post-Harvest and Year 2 Reset",
+          "day_range": "Day 331 to Day 365",
+          "steps": [
+            "Re-test pH, buffer pH and Olsen P; re-lime with 0.5-1.5 t/ha CaCO3e if pH has drifted below 5.5.",
+            "Keep the cover crop growing through the off-season; plough it under only on terraces - on slopes cut and leave as mulch.",
+            "Rotate the following cycle: sweet potato or potato (after liming) in the rows where cassava was, with cassava on the alternate block.",
+            "Replenish vetiver hedgerows, repair bunds, and re-mulch before the next wet season.",
+            "Repeat the soil test annually; expect to top-dress lime every 1-2 years on leached pumice."
+          ],
+          "targets": ["pH 5.5-6.0 maintained", "Ground cover maintained at 100% year round", "Year 2 yield target >= Year 1"]
+        }
+      ],
+      "annual_cycle_note": "Emergency protein (off-soil sprouts + amaranth) occupies Day 0-25 and can start any time; the sweet potato nurse crop covers the slope and yields first starch at Day 90-150; cassava is the long-haul survival crop harvested from Day 270 with an in-ground reserve; cowpea/Mucuna cover closes the year so the slope is never bare."
+    }
+  ],
+
+  "monitoring_plan": [
+    { "checkpoint": "Day -120", "checks": ["baseline soil test (pH, buffer pH, ECe, Al/Ca/Mg/K, Olsen P, organic C)", "slope, cover and erosion class", "fixed-point photographs"], "pass_criteria": ["ECe < 0.75 dS/m", "sample logged"] },
+    { "checkpoint": "Day -60", "checks": ["lime applied at buffer-pH rate", "lime type matches exchangeable Mg", "erosion works installed"], "pass_criteria": ["lime bill matches prescription", "mulch >= 5 t/ha on 100% of slope"] },
+    { "checkpoint": "Day -14", "checks": ["spot pH re-test"], "pass_criteria": ["pH >= 5.5 (ideal 5.5-6.0)", "if < 5.3: topdress lime and delay planting"] },
+    { "checkpoint": "Day 0", "checks": ["P banded", "AMF applied to each planting point", "contour structures intact", "protein trays sown"], "pass_criteria": ["40-60 kg P2O5/ha placed in-row", "zero bare soil", "Day 0 protein clock started"] },
+    { "checkpoint": "Day 14", "checks": ["protein trays, stake sprouting, rill check"], "pass_criteria": ["sprouts harvested or imminent", "no new rills"] },
+    { "checkpoint": "Day 25", "checks": ["protein delivery", "early ground cover"], "pass_criteria": ["edible protein secured (sprouts + leaf)", "sweet potato cover > 40%"] },
+    { "checkpoint": "Day 45", "checks": ["Olsen P, pH, weeding, contour lines"], "pass_criteria": ["Olsen P >= 12 mg/kg", "pH 5.5-6.0", "cover >= 70%"] },
+    { "checkpoint": "Day 60", "checks": ["ground cover, pest scouting, storm damage"], "pass_criteria": ["100% ground cover", "vetiver lines intact"] },
+    { "checkpoint": "Day 90", "checks": ["Olsen P, cassava canopy, cover integrity"], "pass_criteria": ["Olsen P >= 15 mg/kg", "canopy closing", "no bare inter-row"] },
+    { "checkpoint": "Day 180", "checks": ["baby-tuber test lift, soil re-test"], "pass_criteria": ["1.5-2.5 kg per plant", "pH held at 5.5-6.0"] },
+    { "checkpoint": "Day 300-330", "checks": ["main harvest, yield record, post-harvest cover"], "pass_criteria": ["15-25 t/ha", "processed same day", "cover crop sown within 7 days of harvest"] },
+    { "checkpoint": "Day 365", "checks": ["annual soil test, structure audit, photography comparison"], "pass_criteria": ["pH 5.5-6.0", "Olsen P 15-25 mg/kg", "erosion class improved by at least one class"] }
+  ],
+
+  "scenario_resolutions": {
+    "volcanic_ash_pumice_basin": {
+      "label": "Degraded Volcanic Ash / High-Acid Pumice Basin - Emergency Scenario",
+      "input_ref": "scenario_input",
+      "diagnosis": {
+        "base_condition": "ACID_LOW_BASE (severity: high) - pH 4.6 falls in the STRONGLY_ACIDIC class (4.5-5.0), EC assumed non-saline",
+        "modifiers": ["P_FIXATION_ALLOPHANE", "EROSION_SEVERE"],
+        "matched_rules": ["D-02", "D-05", "D-06"],
+        "primary_limitations": [
+          "Exchangeable Al3+ toxicity and low base saturation (Ca, Mg, K leached from ash and pumice)",
+          "Allophane / short-range-order mineral phosphate fixation - applied P is locked up",
+          "Severe slope erosion removing the ash topsoil that holds the little available P"
+        ]
+      },
+      "remediation_ref": "remediation_treatment",
+      "treatment_sequence": [
+        "1. EROSION FIRST (Day -60): mulch 5-8 t/ha, jute netting over rills, vetiver contour hedgerows every 5-10 m vertical interval, grassed waterways, check dams.",
+        "2. LIME to pH 5.5-6.0 (target 5.8) at 2-4 t/ha CaCO3e (4-6 t/ha if Al > 2.5 cmol/kg), type chosen from exchangeable Mg: dolomitic if Mg < 1.0 cmol/kg (typical for leached pumice), 50:50 if 1.0-1.5, calcitic if > 1.5; apply 60-70% at Day -60, balance at Day +60; never with ammonium fertiliser.",
+        "3. BIOCHAR 5-10 t/ha, charged by co-composting 1:2 for 2-4 weeks (never fresh), incorporated in rows or surface-applied under mulch on slopes; deduct its 0.05-0.20 t/t liming credit from the lime rate.",
+        "4. PHOSPHORUS: reactive rock phosphate 250-400 kg/ha banded at 10-15 cm PLUS SSP 200-300 kg/ha (40-60 kg P2O5) banded in the planting zone; sidedress 20-30 kg P2O5/ha at Day 45-60; AMF inoculant 25-50 g per planting point carried on charged biochar; 8-15 t/ha compost as the sorption competitor.",
+        "5. PROTEIN (< 25 days): off-soil tray relay from Day 0 - pea shoots (Day 10-15), mung/lentil/cowpea sprouts (Day 8-12), amaranth leaf (Day 20-25), staggered every 2-3 days.",
+        "6. CROPS: cassava as the long-term survival starch (Day 0, contour rows, stakes 1.0 x 0.8 m), sweet potato as the nurse/erosion crop and first starch (Day 90-150), cowpea cover, taro in wet niches.",
+        "7. VERIFY: pH, Olsen P and ground cover at Day 14/45/60/90 per monitoring_plan."
+      ],
+      "amendment_summary": [
+        { "input": "Calcitic or dolomitic lime", "rate": { "min": 2.0, "max": 4.0, "unit": "t/ha CaCO3e" }, "type_selection": "exchangeable Mg: <1.0 dolomitic | 1.0-1.5 blend | >1.5 calcitic", "timing": "Day -60 (60-70%) + Day +60 (30-40%)" },
+        { "input": "Charged biochar", "rate": { "min": 5.0, "max": 10.0, "unit": "t/ha" }, "type_selection": "co-composted 1:2 with compost for 2-4 weeks before use", "timing": "Day -60 to -30" },
+        { "input": "Compost / FYM", "rate": { "min": 8.0, "max": 15.0, "unit": "t/ha" }, "type_selection": "surface under mulch on slopes; incorporated only in beds/rows", "timing": "Day -30 bed preparation" },
+        { "input": "Reactive phosphate rock (banded)", "rate": { "min": 250, "max": 400, "unit": "kg/ha" }, "type_selection": "80-90% passing 0.15 mm; acid dissolves it best at pH 4.5-6.0", "timing": "Day -30" },
+        { "input": "SSP / TSP starter (banded)", "rate": { "min": 200, "max": 300, "unit": "kg/ha (40-60 kg P2O5)" }, "type_selection": "strict band, never broadcast on allophane soil", "timing": "Day 0" },
+        { "input": "AMF mycorrhizal inoculant", "rate": { "min": 25, "max": 50, "unit": "kg/ha (20-50 g per planting point)" }, "type_selection": "R. irregularis / G. mosseae on charged biochar carrier; keep in-hole soluble P <= ~30 kg P2O5/ha", "timing": "Day 0, planting hole" },
+        { "input": "Potassium (pumice leaches K)", "rate": { "min": 40, "max": 60, "unit": "kg K2O/ha basal (+60-80 kg K2O/ha at Day 90-120)" }, "type_selection": "muriate of potash banded in row", "timing": "Day -30 and Day 90-120" },
+        { "input": "Mulch", "rate": { "min": 5.0, "max": 8.0, "unit": "t/ha" }, "type_selection": "straw/residue/compost blanket", "timing": "Immediately, before next rain" },
+        { "input": "Vetiver contour hedgerows", "rate": "1 line per 5-10 m vertical interval (5 m on slopes >15%)", "unit": "m", "type_selection": "2-3 slips per station at 0.3-0.5 m in-line", "timing": "Day -60, first rains" },
+        { "input": "Molybdenum", "rate": { "min": 100, "max": 200, "unit": "g Mo/ha" }, "type_selection": "seed treatment or 0.1% foliar - restores legume N fixation", "timing": "Sowing / early vegetative" }
+      ],
+      "emergency_protein_ref": "emergency_protein_under_25_days",
+      "starch_strategy_ref": "starch_root_crop_strategy",
+      "top_5_crops_ref": "crop_recommendations['ACID_LOW_BASE+P_FIXATION_ALLOPHANE+EROSION_SEVERE']",
+      "top_5_crops_inline": [
+        { "rank": 1, "crop": "Cassava", "rationale": "Long-term survival starch: tolerates pH 4.3-7.8, 25-40 t/ha, can stand in the ground for 12-18 months as a living reserve, own planting material - established on contours with the mandatory nurse system" },
+        { "rank": 2, "crop": "Sweet potato", "rationale": "Erosion champion and first starch: full ground cover by Day 45-60, tubers at Day 90-150, pH 4.5-7.0 tolerant, efficient P scavenger" },
+        { "rank": 3, "crop": "Taro", "rationale": "Humid volcanic-slope starch for wet drain lines and shaded terraces; pH 4.5-7.0" },
+        { "rank": 4, "crop": "Cowpea", "rationale": "Acid-tolerant N-fixing protein plus fast contour-friendly cover; seeds the next rotation" },
+        { "rank": 5, "crop": "Pineapple", "rationale": "Acid-soil native perennial mat that locks down gentle slopes with zero tillage after establishment" }
+      ],
+      "roadmap_ref": "RM-CASSAVA-ACID-VOLCANIC",
+      "success_criteria": [
+        "Soil pH 5.5-6.0 (target 5.8) by Day 0, held through Day 365",
+        "Edible protein secured by Day 8-12 (sprouts) and closed by Day 25 (amaranth/pea shoots)",
+        "Ground cover >= 70% by Day 30 and 100% by Day 60",
+        "Olsen P >= 12 mg/kg at Day 45 and >= 15 mg/kg at Day 90",
+        "Zero new rills or measurable soil loss after Day 60",
+        "Cassava sprouting >= 90% at Day 21; canopy closed by Day 90-150",
+        "First starch (baby sweet potato) at Day 90-150; cassava yield 15-25 t/ha at Day 270-360",
+        "Erosion class improved by at least one class at the Day 365 survey"
+      ]
+    }
+  }
+}
