@@ -84,7 +84,7 @@ export function analyzeScenario() {
   const summary = getKnowledgeScenario()
   const knowledgeCrops = getKnowledgeCrops()
   return {
-    ...getScenarioData,
+    ...scenario,
     summary,
     matchedRule: knowledgeCrops.length > 0 ? 'ACID_LOW_BASE + P_FIXATION_ALLOPHANE + EROSION_SEVERE' : 'No exact rule match',
     source: recommendationSource,
