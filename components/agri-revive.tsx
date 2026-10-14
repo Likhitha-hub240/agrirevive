@@ -8,62 +8,454 @@ import {
   ChevronDown,
   CircleAlert,
   Droplets,
+  FileDown,
   FlaskConical,
   Leaf,
   Menu,
   Mountain,
+  Printer,
+  RotateCcw,
+  ShieldAlert,
+  Sparkles,
   Sprout,
   SunMedium,
+  Timer,
   Waves,
   X,
+  Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { scenario, type Strategy, type Stage } from '@/lib/agri-revive-data'
+import {
+  diagnoseSoil,
+  initialScenarioParams,
+  SoilInputParams,
+} from '@/lib/knowledge-engine'
+import { SoilOverview } from './dashboard/soil-overview'
+import { SoilAnalyzer } from './analysis/soil-analyzer'
+import { TreatmentExplorer } from './remediation/treatment-explorer'
+import { CropSuitabilityMatrix } from './crops/crop-suitability-matrix'
+import { EmergencyProteinPlanner } from './protein/emergency-protein-planner'
+import { CultivationRoadmap } from './cultivation/cultivation-roadmap'
 
-const iconMap = { ph: FlaskConical, phosphorus: Sprout, slope: Mountain, deadline: SunMedium, cover: Leaf, nutrients: FlaskConical, living: Sprout } as const
+const iconMap = {
+  ph: FlaskConical,
+  phosphorus: Sprout,
+  slope: Mountain,
+  deadline: SunMedium,
+  cover: Leaf,
+  nutrients: FlaskConical,
+  living: Sprout,
+} as const
 
 function Logo() {
-  return <a href="#top" className="flex items-center gap-3" aria-label="AgriRevive home"><span className="grid size-10 place-items-center rounded-full bg-[#d5ecb6] text-[#153d2b]"><Leaf className="size-5" /></span><span className="font-serif text-xl font-semibold tracking-tight text-[#183b2d]">Agri<span className="text-[#7b9f45]">Revive</span></span></a>
-}
-
-function StatCard({ metric }: { metric: typeof scenario.metrics[number] }) {
-  const Icon = iconMap[metric.icon]
-  return <article className="rounded-2xl border border-[#dfe9d7] bg-[#f4f8ef] p-5"><div className="mb-7 flex items-center justify-between"><span className="grid size-10 place-items-center rounded-xl bg-white text-[#547b3f] shadow-sm"><Icon className="size-5" aria-hidden="true" /></span><span className="text-xs font-medium uppercase tracking-[0.18em] text-[#7c8e78]">Field note</span></div><p className="text-3xl font-semibold tracking-tight text-[#183b2d]">{metric.value}</p><p className="mt-1 text-sm font-medium text-[#496653]">{metric.label}</p><p className="mt-3 text-xs text-[#7c8e78]">{metric.detail}</p></article>
+  return (
+    <a href="#top" className="flex items-center gap-3" aria-label="AgriRevive home">
+      <span className="grid size-10 place-items-center rounded-full bg-[#d5ecb6] text-[#153d2b] shadow-sm dark:bg-[#c5e39f] dark:text-[#183b2d]">
+        <Leaf className="size-5" />
+      </span>
+      <span className="font-serif text-xl font-bold tracking-tight text-[#183b2d] dark:text-white">
+        Agri<span className="text-[#7b9f45] dark:text-[#c5e39f]">Revive</span>
+      </span>
+    </a>
+  )
 }
 
 function StrategyCard({ strategy }: { strategy: Strategy }) {
-  const Icon = iconMap[strategy.icon as keyof typeof iconMap]
-  return <details className="group rounded-2xl border border-[#dfe9d7] bg-white p-6 shadow-[0_12px_40px_rgba(35,75,43,0.06)]"><summary className="flex cursor-pointer list-none items-start justify-between gap-4"><div><span className="mb-5 grid size-11 place-items-center rounded-xl bg-[#edf5e5] text-[#587d42]"><Icon className="size-5" /></span><h3 className="font-serif text-xl text-[#183b2d]">{strategy.title}</h3></div><ChevronDown className="mt-2 size-5 shrink-0 text-[#7b9f45] transition-transform group-open:rotate-180" /></summary><p className="mt-4 text-sm leading-7 text-[#617267]">{strategy.short}</p><div className="mt-4 border-t border-[#edf1e9] pt-4 text-sm leading-7 text-[#496653]"><strong className="text-[#183b2d]">In practice: </strong>{strategy.detail}</div></details>
-}
-
-function CropCard({ crop }: { crop: typeof scenario.crops[number] }) {
-  return <article className="overflow-hidden rounded-[1.5rem] border border-[#dfe9d7] bg-white shadow-[0_18px_50px_rgba(35,75,43,0.08)]"><div className="relative h-56 overflow-hidden"><img src={crop.image} alt="Agricultural crop growing in a field" className="size-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-[#102d20]/70 via-transparent to-transparent" /><span className="absolute bottom-4 left-5 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#345c3a]">{crop.category}</span></div><div className="p-7"><div className="flex items-start justify-between gap-4"><h3 className="font-serif text-2xl text-[#183b2d]">{crop.name}</h3><ArrowDownRight className="size-5 shrink-0 text-[#7b9f45]" /></div><p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#7b9f45]">{crop.timing}</p><p className="mt-5 text-sm leading-7 text-[#617267]">{crop.reason}</p><div className="mt-5 rounded-xl bg-[#f4f8ef] p-4 text-xs leading-6 text-[#496653]"><strong className="text-[#183b2d]">Important: </strong>{crop.caveat}</div><ul className="mt-6 grid gap-3 text-sm text-[#496653]">{crop.milestones.map((milestone) => <li key={milestone} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#6d963f]" />{milestone}</li>)}</ul></div></article>
-}
-
-function TimelineStage({ stage }: { stage: Stage }) {
-  return <details className="group relative flex gap-4 border-l border-[#bed4ae] pb-9 pl-7 last:border-transparent md:block md:border-l-0 md:pb-0 md:pl-0"><div className="absolute -left-[9px] top-0 grid size-[17px] place-items-center rounded-full bg-[#739b50] ring-8 ring-[#edf5e5] md:static md:mb-5 md:size-9 md:ring-0"><span className="hidden text-xs font-bold text-white md:block">{stage.number}</span></div><summary className="cursor-pointer list-none md:pr-4"><span className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7b9f45] md:hidden">Stage {stage.number}</span><h3 className="mt-1 font-serif text-xl text-[#183b2d] md:mt-0">{stage.title}</h3><p className="mt-2 text-sm leading-6 text-[#617267]">{stage.text}</p></summary><p className="mt-3 text-sm leading-6 text-[#496653] md:mt-4">{stage.detail}</p></details>
+  const Icon = iconMap[strategy.icon as keyof typeof iconMap] || Leaf
+  return (
+    <details className="group rounded-3xl border border-[#dfe9d7] bg-white p-6 shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-850">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+        <div>
+          <span className="mb-4 grid size-11 place-items-center rounded-2xl bg-[#edf5e5] text-[#587d42] shadow-inner dark:bg-neutral-800 dark:text-[#c5e39f]">
+            <Icon className="size-5" />
+          </span>
+          <h3 className="font-serif text-xl font-bold text-[#183b2d] dark:text-white">
+            {strategy.title}
+          </h3>
+        </div>
+        <ChevronDown className="mt-2 size-5 shrink-0 text-[#7b9f45] transition-transform group-open:rotate-180" />
+      </summary>
+      <p className="mt-4 text-xs leading-relaxed text-[#617267] dark:text-neutral-300">
+        {strategy.short}
+      </p>
+      <div className="mt-4 border-t border-[#edf1e9] pt-4 text-xs leading-relaxed text-[#496653] dark:border-neutral-800 dark:text-neutral-300">
+        <strong className="text-[#183b2d] dark:text-white">In practice: </strong>
+        {strategy.detail}
+      </div>
+    </details>
+  )
 }
 
 export function AgriRevive() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [soilParams, setSoilParams] = useState<SoilInputParams>({ ...initialScenarioParams })
+
+  // Live evaluation from knowledge engine
+  const diagnosis = diagnoseSoil(soilParams)
+
   const closeMenu = () => setMenuOpen(false)
-  return <div id="top" className="min-h-screen bg-[#fbfcf8] text-[#183b2d]">
-    <header className="sticky top-0 z-50 border-b border-[#e5ece0]/80 bg-[#fbfcf8]/95 backdrop-blur"><div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8"><Logo /><nav className="hidden items-center gap-8 md:flex" aria-label="Primary navigation"><a href="#challenge" className="text-sm font-medium text-[#496653] transition-colors hover:text-[#183b2d]">The challenge</a><a href="#solutions" className="text-sm font-medium text-[#496653] transition-colors hover:text-[#183b2d]">Solutions</a><a href="#recovery" className="text-sm font-medium text-[#496653] transition-colors hover:text-[#183b2d]">Recovery plan</a><a href="#resources" className="text-sm font-medium text-[#496653] transition-colors hover:text-[#183b2d]">Resources</a></nav><div className="hidden items-center gap-3 md:flex"><a href="#analysis" className="text-sm font-semibold text-[#496653] hover:text-[#183b2d]">Soil report</a><Button asChild className="rounded-full bg-[#27583d] px-5 text-white hover:bg-[#183b2d]"><a href="#solutions">Explore solutions <ArrowRight data-icon="inline-end" /></a></Button></div><button type="button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => setMenuOpen(!menuOpen)} className="grid size-10 place-items-center rounded-full border border-[#dfe9d7] md:hidden">{menuOpen ? <X /> : <Menu />}</button></div>{menuOpen && <nav className="flex flex-col gap-4 border-t border-[#e5ece0] bg-[#fbfcf8] px-5 py-5 md:hidden"><a onClick={closeMenu} href="#challenge">The challenge</a><a onClick={closeMenu} href="#solutions">Solutions</a><a onClick={closeMenu} href="#recovery">Recovery plan</a><a onClick={closeMenu} href="#resources">Resources</a><a onClick={closeMenu} href="#analysis">Soil report</a></nav>}</header>
 
-    <main>
-      <section className="relative isolate overflow-hidden"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=90" alt="Lush green fields beneath a volcanic mountain range" className="absolute inset-0 -z-20 size-full object-cover" /><div className="absolute inset-0 -z-10 bg-[#143426]/75" /><div className="mx-auto flex min-h-[680px] max-w-7xl items-end px-5 pb-20 pt-32 lg:px-8 lg:pb-28"><div className="max-w-3xl text-white"><p className="mb-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.24em] text-[#d5ecb6]"><span className="h-px w-10 bg-[#b3d18d]" />{scenario.eyebrow}</p><h1 className="max-w-3xl font-serif text-5xl leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-[5.5rem]">Reviving Life in <span className="text-[#c5e39f]">Volcanic Soils</span></h1><p className="mt-7 max-w-xl text-lg leading-8 text-white/80">From acidic ash to fertile fields — data-driven solutions for sustainable agriculture.</p><div className="mt-10 flex flex-col items-start gap-4 sm:flex-row"><Button asChild size="lg" className="rounded-full bg-[#c5e39f] px-6 text-[#183b2d] hover:bg-white"><a href="#solutions">Explore solutions <ArrowRight data-icon="inline-end" /></a></Button><Button asChild size="lg" variant="outline" className="rounded-full border-white/50 bg-white/5 px-6 text-white hover:bg-white hover:text-[#183b2d]"><a href="#analysis">Analyze soil <FlaskConical data-icon="inline-end" /></a></Button></div><p className="mt-8 text-sm font-medium tracking-wide text-white/70">Healthy soil. Stronger crops. Brighter futures.</p></div></div></section>
+  const handlePrint = () => {
+    window.print()
+  }
 
-      <section id="analysis" className="scroll-mt-20 border-b border-[#e5ece0] bg-white"><div className="mx-auto grid max-w-7xl gap-10 px-5 py-10 lg:grid-cols-[1.2fr_2fr] lg:items-center lg:px-8"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7b9f45]">Trial scenario</p><h2 className="mt-3 font-serif text-3xl text-[#183b2d]">{scenario.title}</h2></div><p className="max-w-2xl text-sm leading-7 text-[#617267]">{scenario.summary} <span className="font-semibold text-[#496653]">Illustrative mock data · knowledge base integration pending.</span></p></div><div className="mx-auto grid max-w-7xl gap-4 px-5 pb-20 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">{scenario.metrics.map((metric) => <StatCard key={metric.label} metric={metric} />)}</div></section>
+  const scrollToAnalyzer = () => {
+    const el = document.getElementById('soil-analyzer-section')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
 
-      <section id="challenge" className="scroll-mt-20 mx-auto grid max-w-7xl gap-12 px-5 py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8 lg:py-32"><div className="relative overflow-hidden rounded-[1.75rem]"><img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=85" alt="Volcanic farmland with green crops and mountain backdrop" className="aspect-[4/5] w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-[#173c2b]/70 via-transparent to-transparent" /><div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 gap-2">{scenario.constraints.map((item) => <div key={item.label} className="rounded-xl bg-[#173c2b]/80 p-3 text-white backdrop-blur-sm"><p className="text-sm font-semibold">{item.label}</p><p className="mt-1 text-[10px] text-white/70">{item.detail}</p></div>)}</div></div><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7b9f45]">01 · Read the field</p><h2 className="mt-4 max-w-xl font-serif text-4xl leading-tight text-[#183b2d] sm:text-5xl">Understanding the challenge.</h2><p className="mt-6 max-w-xl text-base leading-8 text-[#617267]">Volcanic soils can be productive, but their chemistry and terrain demand a careful sequence. Here, acidity limits root performance, allophane can bind phosphorus, and steep slopes make every uncovered rain event a risk.</p><div className="mt-8 flex flex-wrap gap-4"><Button asChild className="rounded-full bg-[#27583d] text-white hover:bg-[#183b2d]"><a href="#analysis">View soil report <ArrowRight data-icon="inline-end" /></a></Button><a href="#recovery" className="inline-flex items-center gap-2 rounded-full px-2 text-sm font-semibold text-[#496653] hover:text-[#183b2d]">See recovery plan <ArrowDownRight className="size-4" /></a></div></div></section>
+  return (
+    <div id="top" className="min-h-screen bg-[#fbfcf8] text-[#183b2d] antialiased dark:bg-neutral-950 dark:text-neutral-100">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-[#e5ece0]/80 bg-[#fbfcf8]/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/90">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 lg:px-8">
+          <Logo />
 
-      <section id="solutions" className="scroll-mt-20 bg-[#edf5e5] px-5 py-24 lg:px-8 lg:py-32"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-6 md:flex-row md:items-end"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7b9f45]">02 · Choose with care</p><h2 className="mt-4 font-serif text-4xl leading-tight text-[#183b2d] sm:text-5xl">Crop pathways, not promises.</h2></div><p className="max-w-md text-sm leading-7 text-[#617267]">These illustrative pathways separate the emergency protein question from the longer-term calorie plan. Local validation comes first.</p></div><div className="mt-12 grid gap-6 lg:grid-cols-2">{scenario.crops.map((crop) => <CropCard key={crop.name} crop={crop} />)}</div></div></section>
+          <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
+            <a href="#analysis" className="text-xs font-semibold uppercase tracking-wider text-[#496653] transition hover:text-[#183b2d] dark:text-neutral-300 dark:hover:text-white">
+              Diagnostics
+            </a>
+            <a href="#treatments" className="text-xs font-semibold uppercase tracking-wider text-[#496653] transition hover:text-[#183b2d] dark:text-neutral-300 dark:hover:text-white">
+              Remediation
+            </a>
+            <a href="#solutions" className="text-xs font-semibold uppercase tracking-wider text-[#496653] transition hover:text-[#183b2d] dark:text-neutral-300 dark:hover:text-white">
+              Crop Pathways
+            </a>
+            <a href="#emergency-protein" className="text-xs font-semibold uppercase tracking-wider text-[#496653] transition hover:text-[#183b2d] dark:text-neutral-300 dark:hover:text-white">
+              Emergency Protein (&lt;25d)
+            </a>
+            <a href="#recovery" className="text-xs font-semibold uppercase tracking-wider text-[#496653] transition hover:text-[#183b2d] dark:text-neutral-300 dark:hover:text-white">
+              Cultivation Roadmap
+            </a>
+          </nav>
 
-      <section id="recovery" className="scroll-mt-20 mx-auto max-w-7xl px-5 py-24 lg:px-8 lg:py-32"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7b9f45]">03 · Make the field resilient</p><h2 className="mt-4 font-serif text-4xl leading-tight text-[#183b2d] sm:text-5xl">Restore the soil, protect the harvest.</h2><p className="mt-6 text-base leading-8 text-[#617267]">Start with practices that reduce immediate loss, then use measurements and local knowledge to refine the plan. Expand each strategy for field-ready context.</p></div><div className="mt-12 grid gap-5 md:grid-cols-2">{scenario.strategies.map((strategy) => <StrategyCard key={strategy.title} strategy={strategy} />)}</div><div className="mt-24 rounded-[1.75rem] bg-[#173c2b] p-7 text-white sm:p-10"><div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c5e39f]">A measured path forward</p><h2 className="mt-3 max-w-2xl font-serif text-3xl sm:text-4xl">From exposed slope to living system.</h2></div><p className="max-w-sm text-sm leading-7 text-white/70">A sequence for making progress without mistaking a short-term target for a guaranteed harvest.</p></div><div className="mt-12 grid gap-8 md:grid-cols-4">{scenario.stages.map((stage) => <TimelineStage key={stage.title} stage={stage} />)}</div></div></section>
+          <div className="hidden items-center gap-3 sm:flex">
+            <ThemeToggle />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePrint}
+              className="rounded-full border-[#dfe9d7] bg-white px-4 text-xs font-semibold text-[#183b2d] shadow-sm hover:bg-[#f4f8ef] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            >
+              <Printer className="mr-1.5 size-3.5" />
+              Export Report
+            </Button>
+            <Button asChild className="rounded-full bg-[#27583d] px-5 text-xs font-semibold text-white shadow-sm hover:bg-[#183b2d] dark:bg-[#c5e39f] dark:text-[#183b2d] dark:hover:bg-white">
+              <a href="#treatments">
+                Explore Solutions <ArrowRight className="ml-1 size-3.5" />
+              </a>
+            </Button>
+          </div>
 
-      <section id="resources" className="px-5 pb-24 lg:px-8"><div className="relative mx-auto max-w-7xl overflow-hidden rounded-[1.75rem] bg-[#355f42] px-7 py-16 sm:px-14 lg:py-20"><img src="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1800&q=85" alt="Sunlight filtering through a lush forest canopy" className="absolute inset-0 size-full object-cover opacity-25 mix-blend-screen" /><div className="relative max-w-2xl text-white"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#c5e39f]">AgriRevive field note</p><h2 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">Good soil doesn&apos;t just grow crops. It grows possibilities.</h2><Button asChild size="lg" className="mt-8 rounded-full bg-[#c5e39f] px-6 text-[#183b2d] hover:bg-white"><a href="#recovery">Build a greener future <ArrowRight data-icon="inline-end" /></a></Button></div></div></section>
-    </main>
+          <div className="flex items-center gap-2 lg:hidden">
+            <ThemeToggle />
+            <button
+              type="button"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="grid size-10 place-items-center rounded-full border border-[#dfe9d7] text-[#183b2d] dark:border-neutral-700 dark:text-neutral-200"
+            >
+              {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
+        </div>
 
-    <footer className="border-t border-[#e5ece0] bg-white"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr] lg:px-8"><div><Logo /><p className="mt-5 max-w-xs text-sm leading-7 text-[#617267]">AgriRevive turns soil signals into practical, sustainable decisions for the fields that feed us.</p></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7b9f45]">Navigate</p><div className="mt-5 grid gap-3 text-sm text-[#496653]"><a href="#challenge" className="hover:text-[#183b2d]">The challenge</a><a href="#solutions" className="hover:text-[#183b2d]">Crop pathways</a><a href="#recovery" className="hover:text-[#183b2d]">Recovery plan</a></div></div><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7b9f45]">Resources</p><div className="mt-5 grid gap-3 text-sm text-[#496653]"><a href="#analysis" className="hover:text-[#183b2d]">Scenario report</a><a href="#recovery" className="hover:text-[#183b2d]">Field sequence</a><a href="#top" className="hover:text-[#183b2d]">Back to top</a></div></div></div><div className="border-t border-[#e5ece0] px-5 py-6 text-center text-xs text-[#7c8e78] lg:px-8">Illustrative interface · recommendations require local validation and soil-test context.</div></footer>
-  </div>
+        {/* Mobile Navigation Drawer */}
+        {menuOpen && (
+          <nav className="flex flex-col gap-3 border-t border-[#e5ece0] bg-[#fbfcf8] px-6 py-6 dark:border-neutral-800 dark:bg-neutral-900 lg:hidden">
+            <a onClick={closeMenu} href="#analysis" className="py-1 text-sm font-semibold text-[#183b2d] dark:text-neutral-200">
+              Soil Diagnostics &amp; Dashboard
+            </a>
+            <a onClick={closeMenu} href="#treatments" className="py-1 text-sm font-semibold text-[#183b2d] dark:text-neutral-200">
+              Treatment Exploration &amp; Liming
+            </a>
+            <a onClick={closeMenu} href="#solutions" className="py-1 text-sm font-semibold text-[#183b2d] dark:text-neutral-200">
+              Crop Pathways &amp; Suitability
+            </a>
+            <a onClick={closeMenu} href="#emergency-protein" className="py-1 text-sm font-semibold text-[#183b2d] dark:text-neutral-200">
+              Emergency Protein (&lt;25 Days)
+            </a>
+            <a onClick={closeMenu} href="#recovery" className="py-1 text-sm font-semibold text-[#183b2d] dark:text-neutral-200">
+              Cultivation Roadmap (Cassava)
+            </a>
+          </nav>
+        )}
+      </header>
+
+      <main>
+        {/* HERO SECTION */}
+        <section className="relative isolate overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2200&q=90"
+            alt="Lush green fields beneath a volcanic mountain range"
+            className="absolute inset-0 -z-20 size-full object-cover"
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#143426]/90 via-[#143426]/80 to-[#102d20]/70" />
+
+          <div className="mx-auto flex min-h-[660px] max-w-7xl items-end px-5 pb-20 pt-32 lg:px-8 lg:pb-28">
+            <div className="max-w-3xl text-white">
+              <div className="mb-6 flex flex-wrap items-center gap-3">
+                <span className="rounded-full bg-[#c5e39f]/20 px-3 py-1 font-mono text-xs font-bold uppercase tracking-wider text-[#c5e39f] backdrop-blur-sm">
+                  TERRAFORM TRIAL SCENARIO
+                </span>
+                <span className="text-xs text-white/80">
+                  Volcanic Ash &amp; High-Acid Pumice Basin
+                </span>
+              </div>
+
+              <h1 className="max-w-3xl font-serif text-5xl leading-[0.98] tracking-[-0.04em] sm:text-6xl lg:text-[5.25rem]">
+                Reviving Life in <span className="text-[#c5e39f]">Volcanic Soils</span>
+              </h1>
+
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/85">
+                From acidic ash to fertile fields — data-driven diagnostics, precision liming, allophane phosphorus liberation, emergency protein within 25 days, and long-term starch cultivation.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Button asChild size="lg" className="rounded-full bg-[#c5e39f] px-6 text-sm font-bold text-[#183b2d] shadow-lg hover:bg-white">
+                  <a href="#analysis">
+                    Analyze Soil (pH {soilParams.ph.toFixed(1)}) <FlaskConical className="ml-1.5 size-4" />
+                  </a>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="rounded-full border-white/60 bg-white/10 px-6 text-sm font-bold text-white backdrop-blur-sm hover:bg-white hover:text-[#183b2d]">
+                  <a href="#treatments">
+                    Explore Solutions <ArrowRight className="ml-1.5 size-4" />
+                  </a>
+                </Button>
+              </div>
+
+              {/* Quick Baseline Indicators on Hero */}
+              <div className="mt-10 grid grid-cols-2 gap-3 border-t border-white/20 pt-6 sm:grid-cols-4">
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-white/60">Soil pH</span>
+                  <p className="font-mono text-xl font-bold text-[#c5e39f]">4.6</p>
+                  <span className="text-[10px] text-white/70">Strongly Acidic</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-white/60">Phosphorus</span>
+                  <p className="font-mono text-xl font-bold text-[#c5e39f]">Low</p>
+                  <span className="text-[10px] text-white/70">Allophane-bound</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-white/60">Slope Erosion</span>
+                  <p className="font-mono text-xl font-bold text-[#c5e39f]">Severe</p>
+                  <span className="text-[10px] text-white/70">Active Rills</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider text-white/60">Emergency Protein</span>
+                  <p className="font-mono text-xl font-bold text-[#c5e39f]">&lt; 25 Days</p>
+                  <span className="text-[10px] text-white/70">Off-Soil Tray Relay</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 1. ANIMATED DASHBOARD & LIVE DIAGNOSIS OVERVIEW */}
+        <section id="analysis" className="scroll-mt-20">
+          <SoilOverview
+            diagnosis={diagnosis}
+            params={soilParams}
+            onOpenAnalysis={scrollToAnalyzer}
+          />
+        </section>
+
+        {/* 2. INTERACTIVE SOIL ANALYSIS & pH TRACKER */}
+        <section className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+          <SoilAnalyzer
+            params={soilParams}
+            onParamsChange={(newParams) => setSoilParams(newParams)}
+            diagnosis={diagnosis}
+          />
+        </section>
+
+        {/* 3. UNDERSTANDING THE CHALLENGE (Preserved & Enhanced) */}
+        <section id="challenge" className="scroll-mt-20 mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
+          <div className="relative overflow-hidden rounded-3xl shadow-lg">
+            <img
+              src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=85"
+              alt="Volcanic farmland with green crops and mountain backdrop"
+              className="aspect-[4/5] w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#173c2b]/80 via-transparent to-transparent" />
+            <div className="absolute bottom-5 left-5 right-5 grid grid-cols-3 gap-2">
+              <div className="rounded-xl bg-[#173c2b]/90 p-3 text-white backdrop-blur-sm">
+                <p className="text-xs font-semibold">pH 4.6</p>
+                <p className="mt-1 text-[10px] text-white/70">Exchangeable Al³⁺</p>
+              </div>
+              <div className="rounded-xl bg-[#173c2b]/90 p-3 text-white backdrop-blur-sm">
+                <p className="text-xs font-semibold">Low P</p>
+                <p className="mt-1 text-[10px] text-white/70">Allophane Sinks</p>
+              </div>
+              <div className="rounded-xl bg-[#173c2b]/90 p-3 text-white backdrop-blur-sm">
+                <p className="text-xs font-semibold">Severe Slope</p>
+                <p className="mt-1 text-[10px] text-white/70">Erosion Exposure</p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-lg bg-[#edf5e5] text-[#2d5939] dark:bg-neutral-800 dark:text-[#c5e39f]">
+                <Mountain className="size-4" />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#7b9f45]">
+                Agronomic Challenge
+              </span>
+            </div>
+            <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-[#183b2d] sm:text-4xl dark:text-white">
+              Understanding the Volcanic Basin Challenge
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-[#617267] dark:text-neutral-300">
+              Volcanic Andosols possess unique physical and chemical characteristics. Their light, porous tephra materials detach effortlessly under rainstorm impact, causing devastating rills on unprotected slopes.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-[#617267] dark:text-neutral-300">
+              Chemically, amorphous allophane minerals and exchangeable aluminum (Al³⁺) severely restrict plant roots, causing root tips to blacken and prune while binding over 85% of applied phosphorus. Direct tillage or broadcast fertilizer only accelerates topsoil destruction.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-4">
+              <Button asChild className="rounded-full bg-[#27583d] text-white hover:bg-[#183b2d] dark:bg-[#c5e39f] dark:text-[#183b2d] dark:hover:bg-white">
+                <a href="#treatments">
+                  View Precision Liming Protocol <ArrowRight className="ml-1.5 size-4" />
+                </a>
+              </Button>
+              <a
+                href="#solutions"
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold text-[#496653] hover:text-[#183b2d] dark:text-[#c5e39f] dark:hover:text-white"
+              >
+                Inspect Ranked Crops <ArrowDownRight className="size-4" />
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. TREATMENT EXPLORATION & REMEDIATION */}
+        <TreatmentExplorer diagnosis={diagnosis} params={soilParams} />
+
+        {/* 5. CROP PATHWAYS & SUITABILITY MATRIX */}
+        <CropSuitabilityMatrix diagnosis={diagnosis} />
+
+        {/* 6. EMERGENCY PROTEIN PLANNER (<25 DAYS) */}
+        <EmergencyProteinPlanner />
+
+        {/* 7. LONG-TERM STARCH CULTIVATION ROADMAP */}
+        <CultivationRoadmap />
+
+        {/* 8. CORE STRATEGIES (Preserved from original) */}
+        <section className="border-b border-[#dfe9d7] bg-[#edf5e5]/30 py-20 dark:border-neutral-800 dark:bg-neutral-900/40">
+          <div className="mx-auto max-w-7xl px-5 lg:px-8">
+            <div className="max-w-2xl">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#7b9f45]">
+                Core Principles
+              </span>
+              <h2 className="mt-2 font-serif text-3xl font-bold text-[#183b2d] sm:text-4xl dark:text-white">
+                Four Pillars of Soil Revival
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#617267] dark:text-neutral-300">
+                Ground-level practices designed for lasting resilience. Expand each card for practical on-farm instructions.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {scenario.strategies.map((strategy) => (
+                <StrategyCard key={strategy.title} strategy={strategy} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 9. CALL TO ACTION / RESOURCES */}
+        <section id="resources" className="px-5 py-20 lg:px-8">
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-[#355f42] px-7 py-16 sm:px-14 lg:py-20">
+            <img
+              src="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1800&q=85"
+              alt="Sunlight filtering through a lush forest canopy"
+              className="absolute inset-0 size-full object-cover opacity-25 mix-blend-screen"
+            />
+            <div className="relative max-w-2xl text-white">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#c5e39f]">
+                AgriRevive Field Directive
+              </span>
+              <h2 className="mt-3 font-serif text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
+                Good soil doesn&apos;t just grow crops. It anchors civilizations.
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-white/80">
+                Download the complete field protocol or re-run the diagnostic engine whenever new laboratory soil test results or weather patterns arrive.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Button
+                  size="lg"
+                  onClick={handlePrint}
+                  className="rounded-full bg-[#c5e39f] px-6 text-sm font-bold text-[#183b2d] hover:bg-white"
+                >
+                  <FileDown className="mr-1.5 size-4" /> Print / Export Complete Field Dossier
+                </Button>
+                <Button asChild size="lg" variant="outline" className="rounded-full border-white/60 bg-white/10 px-6 text-sm font-bold text-white hover:bg-white hover:text-[#183b2d]">
+                  <a href="#analysis">Re-evaluate Parameters</a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* FOOTER */}
+      <footer className="border-t border-[#e5ece0] bg-white dark:border-neutral-800 dark:bg-neutral-950">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-14 sm:grid-cols-2 md:grid-cols-4 lg:px-8">
+          <div>
+            <Logo />
+            <p className="mt-4 max-w-xs text-xs leading-relaxed text-[#617267] dark:text-neutral-400">
+              AgriRevive transforms soil chemistry signals and terrain constraints into actionable, sustainable decisions for the fields that sustain us.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#7b9f45]">
+              Diagnostic Tools
+            </p>
+            <div className="mt-4 grid gap-2.5 text-xs text-[#496653] dark:text-neutral-400">
+              <a href="#analysis" className="hover:text-[#183b2d] dark:hover:text-white">Live Soil Assessment</a>
+              <a href="#analysis" className="hover:text-[#183b2d] dark:hover:text-white">Interactive pH Tracker</a>
+              <a href="#analysis" className="hover:text-[#183b2d] dark:hover:text-white">Slope Cross-Section</a>
+              <a href="#treatments" className="hover:text-[#183b2d] dark:hover:text-white">Precision Liming Calculator</a>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#7b9f45]">
+              Crops &amp; Nutrition
+            </p>
+            <div className="mt-4 grid gap-2.5 text-xs text-[#496653] dark:text-neutral-400">
+              <a href="#solutions" className="hover:text-[#183b2d] dark:hover:text-white">Cassava &amp; Sweet Potato</a>
+              <a href="#solutions" className="hover:text-[#183b2d] dark:hover:text-white">Suitability Comparison Matrix</a>
+              <a href="#emergency-protein" className="hover:text-[#183b2d] dark:hover:text-white">Decoupled Protein Relays</a>
+              <a href="#recovery" className="hover:text-[#183b2d] dark:hover:text-white">9-Phase Cultivation Journey</a>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-[#7b9f45]">
+              Knowledge Base
+            </p>
+            <div className="mt-4 grid gap-2.5 text-xs text-[#496653] dark:text-neutral-400">
+              <span>KB: Volcanic Soils v2.0.0</span>
+              <span>Classification: Andosol / Andisol</span>
+              <span>Guard G-01 through G-05 Active</span>
+              <a href="#top" className="font-bold text-[#27583d] hover:underline dark:text-[#c5e39f]">
+                Back to top ↑
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-[#e5ece0] px-5 py-6 text-center text-xs text-[#7c8e78] dark:border-neutral-800 dark:text-neutral-500 lg:px-8">
+          AgriRevive Agricultural Decision Support Platform · Based on USDA-NRCS, FAO WRB, IFDC, and International Biochar Initiative standards · Field rates require site-specific soil testing.
+        </div>
+      </footer>
+    </div>
+  )
 }
