@@ -15,6 +15,8 @@ export type CropRecommendation = {
   milestones: string[]
 }
 
+import { getKnowledgeCrops, getKnowledgeScenario, knowledgeBaseInfo } from '@/lib/knowledge-base'
+
 export const scenario = {
   eyebrow: 'TRIAL SCENARIO / VOLCANIC HIGHLANDS',
   title: 'Degraded volcanic soil, urgent nutrition needs.',
@@ -65,9 +67,28 @@ export const scenario = {
   ],
 }
 
-// Integration boundary: replace this mock source with the future knowledge-base adapter.
+// Integration boundary: the UI consumes this adapter, not raw knowledge.json fields.
 export async function getScenarioData() {
   return scenario
+}
+
+export const recommendationSource = knowledgeBaseInfo
+
+// Keep the initial editorial shell, while replacing recommendation records with repository data.
+const repositoryCrops = getKnowledgeScenario()
+if (repositoryCrops.length > 0) {
+  scenario.crops = repositoryCrops as typeof scenario.crops
+}
+
+export function analyzeScenario() {
+  const summary = getKnowledgeScenario()
+  const knowledgeCrops = getKnowledgeCrops()
+  return {
+    ...getScenarioData,
+    summary,
+    matchedRule: knowledgeCrops.length > 0 ? 'ACID_LOW_BASE + P_FIXATION_ALLOPHANE + EROSION_SEVERE' : 'No exact rule match',
+    source: recommendationSource,
+  }
 }
 
 export type ScenarioData = typeof scenario
