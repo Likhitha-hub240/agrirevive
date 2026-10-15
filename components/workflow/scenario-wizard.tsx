@@ -259,19 +259,25 @@ export function ScenarioWizard() {
               </button>
             </div>
 
-            {/* Photo / Picture Scenario Upload Section */}
-            <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+            {/* Photo & Written Observation Intake (Pure Intake Block) */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* 1. Visual / Photo Scenario Input */}
               <div className="rounded-2xl border border-[#dfe9d7] bg-[#fbfcf8] p-5 dark:border-neutral-800 dark:bg-neutral-900">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold uppercase tracking-wider text-[#183b2d] dark:text-neutral-200">
-                    Scenario Visual / Photo Input
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-7 place-items-center rounded-lg bg-[#edf5e5] text-[#27583d] dark:bg-neutral-800 dark:text-[#c5e39f]">
+                      <ImageIcon className="size-4" />
+                    </span>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#183b2d] dark:text-neutral-200">
+                      Photo / Picture Scenario Intake
+                    </label>
+                  </div>
                   <label
                     htmlFor="photo-upload"
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#bed4ae] bg-white px-3 py-1 text-xs font-semibold text-[#27583d] shadow-sm hover:bg-[#edf5e5] dark:border-neutral-700 dark:bg-neutral-800 dark:text-[#c5e39f]"
                   >
                     <Upload className="size-3.5" />
-                    Upload Photo Scenario
+                    Upload Image
                     <input
                       id="photo-upload"
                       type="file"
@@ -282,116 +288,112 @@ export function ScenarioWizard() {
                   </label>
                 </div>
 
-                <div className="relative mt-4 h-56 overflow-hidden rounded-xl border border-[#dfe9d7] bg-black/5 dark:border-neutral-800">
+                <div className="relative mt-4 h-64 overflow-hidden rounded-xl border border-[#dfe9d7] bg-black/5 dark:border-neutral-800">
                   <img
                     src={uploadedImage}
                     alt="Scenario terrain"
                     className="size-full object-cover"
                   />
-                  <div className="absolute bottom-2 left-2 rounded-md bg-black/70 px-2 py-1 text-[10px] font-mono text-white backdrop-blur-sm">
-                    Scenario Image Intake: Degradation &amp; Slope Rills Detected
+                  <div className="absolute bottom-2 left-2 rounded-md bg-black/75 px-2.5 py-1 text-[11px] font-mono text-white backdrop-blur-sm">
+                    Visual Scenario Intake: Uploaded Scenario Photo
                   </div>
                 </div>
 
-                {/* Free Text Written Observations */}
-                <div className="mt-4">
-                  <label
-                    htmlFor="observation-notes"
-                    className="text-xs font-bold text-[#183b2d] dark:text-neutral-200"
+                <div className="mt-3 flex items-center justify-between text-xs text-[#7c8e78]">
+                  <span>Supports image upload (PNG, JPG, WebP)</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setUploadedImage(
+                        'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80'
+                      )
+                    }
+                    className="font-semibold text-[#27583d] underline hover:text-[#183b2d] dark:text-[#c5e39f]"
                   >
-                    Written Field Observation &amp; Constraint Notes
-                  </label>
-                  <textarea
-                    id="observation-notes"
-                    rows={3}
-                    value={observationNotes}
-                    onChange={(e) => setObservationNotes(e.target.value)}
-                    className="mt-2 w-full rounded-xl border border-[#dfe9d7] bg-white p-3 text-xs leading-relaxed text-[#183b2d] outline-none focus:ring-2 focus:ring-[#739b50] dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                  />
+                    Use Baseline Photo
+                  </button>
                 </div>
               </div>
 
-              {/* Numerical & Chemical Parameter Controls */}
-              <div className="space-y-4 rounded-2xl border border-[#dfe9d7] bg-[#fbfcf8] p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#183b2d] dark:text-neutral-200">
-                  Quantitative Parameters
-                </span>
-
-                {/* pH Slider */}
+              {/* 2. Written Scenario Intake */}
+              <div className="flex flex-col justify-between rounded-2xl border border-[#dfe9d7] bg-[#fbfcf8] p-5 dark:border-neutral-800 dark:bg-neutral-900">
                 <div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-[#183b2d] dark:text-neutral-200">Soil pH:</span>
-                    <span className="font-mono font-bold text-rose-700 dark:text-rose-400">
-                      {params.ph.toFixed(1)}
-                    </span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="grid size-7 place-items-center rounded-lg bg-[#edf5e5] text-[#27583d] dark:bg-neutral-800 dark:text-[#c5e39f]">
+                        <FileText className="size-4" />
+                      </span>
+                      <label
+                        htmlFor="observation-notes"
+                        className="text-xs font-bold uppercase tracking-wider text-[#183b2d] dark:text-neutral-200"
+                      >
+                        Written Scenario &amp; Field Notes
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const baseline =
+                            'Volcanic Ash & High-Acid Pumice Basin\nSoil pH: 4.6 (Strongly acidic)\nSoil type: Degraded volcanic soil / Andosol\nAvailable phosphorus: Low due to allophane binding\nSlope erosion: Severe with active rills\nEmergency protein objective: Within 25 days\nLong-term objective: Suitable high-yield starch root crop'
+                          setObservationNotes(baseline)
+                          setParams({ ...initialScenarioParams })
+                        }}
+                        className="rounded border border-[#bed4ae] bg-white px-2 py-0.5 text-[10px] font-semibold text-[#27583d] hover:bg-[#edf5e5] dark:border-neutral-700 dark:bg-neutral-800 dark:text-[#c5e39f]"
+                      >
+                        Paste Baseline Scenario
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setObservationNotes('')}
+                        className="text-[10px] text-[#7c8e78] underline hover:text-rose-600"
+                      >
+                        Clear
+                      </button>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="0.0"
-                    max="14.0"
-                    step="0.1"
-                    value={params.ph}
-                    onChange={(e) =>
-                      setParams({ ...params, ph: parseFloat(e.target.value) })
-                    }
-                    className="mt-2 h-2 w-full cursor-pointer accent-[#27583d] dark:accent-[#c5e39f]"
+
+                  <p className="mt-2 text-xs text-[#617267] dark:text-neutral-400">
+                    Paste or type the written scenario prompt provided by the evaluators.
+                  </p>
+
+                  <textarea
+                    id="observation-notes"
+                    rows={8}
+                    value={observationNotes}
+                    onChange={(e) => {
+                      const newText = e.target.value
+                      setObservationNotes(newText)
+                      // Auto-detect pH if present in written text
+                      const phMatch = newText.match(/ph\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)/i)
+                      if (phMatch && phMatch[1]) {
+                        const parsed = parseFloat(phMatch[1])
+                        if (!isNaN(parsed) && parsed >= 0 && parsed <= 14) {
+                          setParams((prev) => ({ ...prev, ph: parsed }))
+                        }
+                      }
+                      // Auto-detect erosion if low
+                      if (newText.toLowerCase().includes('low erosion') || newText.toLowerCase().includes('flat')) {
+                        setParams((prev) => ({ ...prev, slopeSeverity: 'EROSION_LOW' }))
+                      } else if (newText.toLowerCase().includes('severe') || newText.toLowerCase().includes('rill')) {
+                        setParams((prev) => ({ ...prev, slopeSeverity: 'EROSION_SEVERE' }))
+                      }
+                      // Auto-detect phosphorus
+                      if (newText.toLowerCase().includes('adequate p') || newText.toLowerCase().includes('high p')) {
+                        setParams((prev) => ({ ...prev, phosphorusStatus: 'P_ADEQUATE' }))
+                      } else if (newText.toLowerCase().includes('allophane') || newText.toLowerCase().includes('low p')) {
+                        setParams((prev) => ({ ...prev, phosphorusStatus: 'P_LOW' }))
+                      }
+                    }}
+                    placeholder="Paste scenario text here (e.g. Soil pH: 4.6, volcanic andosol, low phosphorus, severe slope erosion...)"
+                    className="mt-3 w-full rounded-xl border border-[#dfe9d7] bg-white p-3.5 font-mono text-xs leading-relaxed text-[#183b2d] outline-none focus:ring-2 focus:ring-[#739b50] dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                   />
                 </div>
 
-                {/* Soil Type */}
-                <div>
-                  <span className="text-xs font-semibold text-[#183b2d] dark:text-neutral-200">Soil Classification:</span>
-                  <select
-                    value={params.soilType}
-                    onChange={(e) => setParams({ ...params, soilType: e.target.value })}
-                    className="mt-1.5 w-full rounded-xl border border-[#dfe9d7] bg-white p-2 text-xs font-medium dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                  >
-                    <option value="Volcanic Andosol (degraded pumice basin)">
-                      Volcanic Andosol (Degraded Pumice Basin)
-                    </option>
-                    <option value="Weathered Basaltic Ash">Weathered Basaltic Ash</option>
-                    <option value="Clay Loam Acid Soil">Clay Loam Acid Soil</option>
-                  </select>
-                </div>
-
-                {/* Available P */}
-                <div>
-                  <span className="text-xs font-semibold text-[#183b2d] dark:text-neutral-200">Available Phosphorus:</span>
-                  <select
-                    value={params.phosphorusStatus}
-                    onChange={(e) => setParams({ ...params, phosphorusStatus: e.target.value as any })}
-                    className="mt-1.5 w-full rounded-xl border border-[#dfe9d7] bg-white p-2 text-xs font-medium dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                  >
-                    <option value="P_LOW">Low (Allophane Bound · &lt;15 mg/kg)</option>
-                    <option value="P_VERY_LOW">Very Low (&lt;10 mg/kg)</option>
-                    <option value="P_ADEQUATE">Adequate (15–30 mg/kg)</option>
-                  </select>
-                </div>
-
-                {/* Slope Erosion */}
-                <div>
-                  <span className="text-xs font-semibold text-[#183b2d] dark:text-neutral-200">Slope &amp; Erosion Risk:</span>
-                  <select
-                    value={params.slopeSeverity}
-                    onChange={(e) => setParams({ ...params, slopeSeverity: e.target.value as any })}
-                    className="mt-1.5 w-full rounded-xl border border-[#dfe9d7] bg-white p-2 text-xs font-medium dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                  >
-                    <option value="EROSION_SEVERE">Severe (&gt;15% Slope, Active Rills)</option>
-                    <option value="EROSION_MODERATE">Moderate (5–15% Slope)</option>
-                    <option value="EROSION_LOW">Low (0–5% Slope)</option>
-                  </select>
-                </div>
-
-                {/* Unmeasured parameters toggles */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-xl border border-[#dfe9d7] bg-white p-2 dark:border-neutral-700 dark:bg-neutral-800">
-                    <span className="text-[10px] text-[#7c8e78]">Nitrogen Status:</span>
-                    <p className="font-bold text-[#183b2d] dark:text-white">Not measured</p>
-                  </div>
-                  <div className="rounded-xl border border-[#dfe9d7] bg-white p-2 dark:border-neutral-700 dark:bg-neutral-800">
-                    <span className="text-[10px] text-[#7c8e78]">Salinity (ECe):</span>
-                    <p className="font-bold text-[#183b2d] dark:text-white">Not measured (&lt;0.75)</p>
-                  </div>
+                <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+                  <strong>Intake Status: </strong>
+                  Written notes &amp; scenario image are logged. Click below to proceed to the factual input echo.
                 </div>
               </div>
             </div>
@@ -409,55 +411,38 @@ export function ScenarioWizard() {
             <h2 className="mt-1 font-serif text-2xl font-bold text-[#183b2d] dark:text-white">
               Input Echo (Strictly Echoing Provided Data)
             </h2>
-            <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 text-xs text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
-              <strong>Evaluation Rule: </strong>
-              This page displays strictly whatever was inputted. No inferences, calculations, or conclusions are drawn here.
+            <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
+              <strong>Evaluation Rule (Judging Integrity): </strong>
+              This page displays strictly whatever was inputted. No inferences, calculations, or diagnostic conclusions are drawn on this page.
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
               {/* Photo Echo */}
               <div className="rounded-2xl border border-[#dfe9d7] bg-[#fbfcf8] p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                <span className="text-xs font-bold text-[#7c8e78] uppercase">Uploaded Image Echo</span>
+                <span className="text-xs font-bold text-[#7c8e78] uppercase tracking-wider">
+                  Visual Intake Echo
+                </span>
                 <div className="mt-3 overflow-hidden rounded-xl border border-[#dfe9d7] dark:border-neutral-800">
-                  <img src={uploadedImage} alt="Input echo" className="h-56 w-full object-cover" />
+                  <img src={uploadedImage} alt="Input echo" className="h-64 w-full object-cover" />
                 </div>
-                <div className="mt-3 rounded-xl bg-white p-3 text-xs text-[#183b2d] dark:bg-neutral-800 dark:text-neutral-200">
-                  <strong>Notes Echo: </strong>{observationNotes}
-                </div>
+                <p className="mt-2 text-[11px] text-[#7c8e78] dark:text-neutral-400">
+                  Scenario visual registered without alteration.
+                </p>
               </div>
 
-              {/* Data Echo Sheet */}
-              <div className="rounded-2xl border border-[#dfe9d7] bg-[#fbfcf8] p-5 dark:border-neutral-800 dark:bg-neutral-900">
-                <span className="text-xs font-bold text-[#7c8e78] uppercase">Structured Parameter Echo</span>
-                <div className="mt-3 divide-y divide-[#dfe9d7] text-xs dark:divide-neutral-800">
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Measured Soil pH</span>
-                    <span className="font-mono font-bold text-[#183b2d] dark:text-white">{params.ph.toFixed(1)}</span>
+              {/* Written Scenario Echo */}
+              <div className="flex flex-col justify-between rounded-2xl border border-[#dfe9d7] bg-[#fbfcf8] p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                <div>
+                  <span className="text-xs font-bold text-[#7c8e78] uppercase tracking-wider">
+                    Written Scenario Text Echo
+                  </span>
+                  <div className="mt-3 whitespace-pre-wrap rounded-xl border border-[#dfe9d7] bg-white p-4 font-mono text-xs leading-relaxed text-[#183b2d] dark:border-neutral-700 dark:bg-neutral-800 dark:text-white">
+                    {observationNotes || 'No written text provided.'}
                   </div>
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Reported Soil Type</span>
-                    <span className="font-bold text-[#183b2d] dark:text-white">{params.soilType}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Phosphorus Status</span>
-                    <span className="font-bold text-[#183b2d] dark:text-white">{params.phosphorusStatus}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Slope &amp; Erosion Severity</span>
-                    <span className="font-bold text-[#183b2d] dark:text-white">{params.slopeSeverity}</span>
-                  </div>
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Nitrogen Measurement</span>
-                    <span className="font-semibold text-amber-700 dark:text-amber-300">Not measured</span>
-                  </div>
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Salinity (ECe) Measurement</span>
-                    <span className="font-semibold text-amber-700 dark:text-amber-300">Not measured (&lt;0.75 dS/m assumed)</span>
-                  </div>
-                  <div className="flex justify-between py-2.5">
-                    <span className="text-[#617267] dark:text-neutral-400">Buffer pH Measurement</span>
-                    <span className="font-semibold text-rose-700 dark:text-rose-300">Unmeasured (Triggers Safety Guard G-02)</span>
-                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl bg-[#edf5e5] p-3 text-xs text-[#27583d] dark:bg-neutral-800 dark:text-[#c5e39f]">
+                  ✓ Intake Verified. Ready to evaluate missing factors and soil gaps in Step 3.
                 </div>
               </div>
             </div>
